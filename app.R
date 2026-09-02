@@ -11,6 +11,8 @@ library(tibble)
 library(ggplot2)
 library(DT)
 library(scales)
+library(httr2)
+library(jsonlite)
 
 # ============================================================
 # 1. ASSESSMENT MATRIX
@@ -709,6 +711,33 @@ ui <- page_navbar(
 
       ),
 
+      card(
+        full_screen = TRUE,
+        card_header(
+          "🕵️ AI RiskCheck interpretation"
+        ),
+
+        p(
+          class = "text-muted",
+          paste(
+            "Generate a plain-English interpretation using the project",
+            "details and completed assessment answers."
+          )
+        ),
+
+        actionButton(
+          "generate_ai_summary",
+          "Generate AI interpretation",
+          class = "btn-primary",
+          icon = icon("wand-magic-sparkles")
+        ),
+
+        br(),
+        br(),
+
+        uiOutput("ai_summary")
+      ),
+
       br(),
 
       downloadButton(
@@ -1209,6 +1238,75 @@ server <- function(input, output, session) {
 
   }
 
+  # ============================================================
+  # DATABRICKS LLM
+  # ============================================================
+
+  config <- jsonlite::fromJSON("config.json")
+
+  databricks_token <- config$DATABRICKS_TOKEN
+
+  if (
+    is.null(databricks_token) ||
+    !nzchar(databricks_token)
+  ) {
+    stop("DATABRICKS_TOKEN is missing from config.json")
+  }
+
+
+  call_databricks_llm <- function(prompt) {
+
+    response <-
+      httr2::request(
+        paste0(
+          "https://adb-5037484389568426.6.azuredatabricks.net",
+          "/serving-endpoints/chat/completions"
+        )
+      ) %>%
+      httr2::req_headers(
+        Authorization = paste("Bearer", databricks_token)
+      ) %>%
+      httr2::req_body_json(
+        list(
+          model = "databricks-claude-opus-4-7",
+          messages = list(
+            list(
+              role = "system",
+              content = paste(
+                "You are an expert Responsible AI assessor.",
+                "Base your assessment only on the supplied information.",
+                "Do not invent missing facts.",
+                "Clearly identify incomplete assessment information."
+              )
+            ),
+            list(
+              role = "user",
+              content = prompt
+            )
+          ),
+          max_tokens = 500
+        ),
+        auto_unbox = TRUE
+      ) %>%
+      httr2::req_timeout(60) %>%
+      httr2::req_error(
+        body = function(resp) {
+          paste(
+            "Databricks request failed:",
+            httr2::resp_body_string(resp)
+          )
+        }
+      ) %>%
+      httr2::req_perform()
+
+    result <- httr2::resp_body_json(
+      response,
+      simplifyVector = FALSE
+    )
+
+    result$choices[[1]]$message$content
+  }
+
 
   # ----------------------------------------------------------
   # SUMMARY OUTPUTS
@@ -1337,6 +1435,187 @@ server <- function(input, output, session) {
 
   })
 
+  # ----------------------------------------------------------
+  # LLM Prompt
+  # ----------------------------------------------------------
+
+  llm_prompt <- reactive({
+
+    scores <- domain_scores()
+
+    answer_summary <-
+      scored_answers() %>%
+      filter(!is.na(response)) %>%
+      transmute(
+        answer = paste0(
+          "- Domain: ", domain,
+          "\n  Question: ", question,
+          "\n  Response score: ", response, " out of 4",
+          "\n  Concern score: ", adjusted_score, " out of 4"
+        )
+      ) %>%
+      pull(answer) %>%
+      paste(collapse = "\n")
+
+    flag_text <-
+      if (length(red_flags()) == 0) {
+        "None identified."
+      } else {
+        paste(
+          paste0("- ", red_flags()),
+          collapse = "\n"
+        )
+      }
+
+    paste0(
+      "Assess the following Responsible AI use case.\n\n",
+
+      "PROJECT INFORMATION\n",
+      "Project name: ",
+      input$project_name,
+      "\n",
+
+      "Description: ",
+      input$project_description,
+      "\n",
+
+      "Lifecycle stage: ",
+      input$lifecycle,
+      "\n",
+
+      "Type of AI: ",
+      input$ai_type,
+      "\n",
+
+      "Audience or affected users: ",
+      input$audience,
+      "\n\n",
+
+      "CALCULATED ASSESSMENT\n",
+      "Overall risk label: ",
+      risk_label(),
+      "\n",
+
+      "Residual risk: ",
+      round(residual_score(), 1),
+      "%\n",
+
+      "Inherent risk: ",
+      round(inherent_score(), 1),
+      "%\n",
+
+      "Control strength: ",
+      round(control_score(), 1),
+      "%\n\n",
+
+      "DOMAIN CONCERN SCORES\n",
+      paste0(
+        "- ",
+        scores$domain,
+        ": ",
+        round(scores$risk_score, 1),
+        "%",
+        collapse = "\n"
+      ),
+      "\n\n",
+
+      "ASSESSMENT ANSWERS\n",
+      answer_summary,
+      "\n\n",
+
+      "MANDATORY RED FLAGS\n",
+      flag_text,
+      "\n\n",
+
+      "Provide the following sections:\n",
+      "1. Overall assessment\n",
+      "2. Principal risks\n",
+      "3. Existing strengths and safeguards\n",
+      "4. Priority actions\n",
+      "5. Information still required\n\n",
+
+      "Use clear British English. ",
+      "Do not recalculate or contradict the supplied numerical scores. ",
+      "Do not infer controls that have not been recorded. ",
+      "Keep the response under 400 words."
+    )
+  })
+
+  output$ai_summary <- renderUI({
+
+  if (input$generate_ai_summary == 0) {
+
+      return(
+        div(
+          class = "alert alert-info",
+          paste(
+            "Complete the Start and Assessment pages, then select",
+            "'Generate AI interpretation'."
+          )
+        )
+      )
+
+    }
+
+    summary_text <- ai_summary_result()
+
+    div(
+      class = "p-3 border rounded bg-light",
+
+      tags$div(
+        style = "white-space: pre-wrap;",
+        summary_text
+      ),
+
+      hr(),
+
+      tags$small(
+        class = "text-muted",
+        paste(
+          "This interpretation was generated by AI.",
+          "Review it before relying on it."
+        )
+      )
+    )
+  })
+
+  ai_summary_result <-
+  eventReactive(
+    input$generate_ai_summary,
+    {
+
+      req(nzchar(trimws(input$project_name)))
+      req(nzchar(trimws(input$project_description)))
+      req(completion() == 1)
+
+      withProgress(
+        message = "Generating AI RiskCheck interpretation",
+        value = 0.5,
+        {
+
+          tryCatch(
+
+            call_databricks_llm(
+              llm_prompt()
+            ),
+
+            error = function(e) {
+
+              paste0(
+                "The AI interpretation could not be generated. ",
+                conditionMessage(e)
+              )
+
+            }
+
+          )
+
+        }
+      )
+
+    },
+    ignoreInit = TRUE
+  )
 
   # ----------------------------------------------------------
   # RISK PROFILE CHART
@@ -1790,7 +2069,7 @@ server <- function(input, output, session) {
     filename = function() {
 
       paste0(
-        "AI_Spy_Assessment_",
+        "AI_RiskCheck_Assessment_",
         Sys.Date(),
         ".csv"
       )
