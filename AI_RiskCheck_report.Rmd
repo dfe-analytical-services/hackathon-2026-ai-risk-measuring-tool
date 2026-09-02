@@ -1,0 +1,268 @@
+---
+title: "AI Risk Assessment Report"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    self_contained: true
+    toc: true
+    toc_float: true
+    theme: flatly
+    highlight: tango
+params:
+  report_info: NA
+  summary: NA
+  answers: NA
+  domain_scores: NA
+  recommendations: NA
+  red_flags: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(scales)
+```
+
+<style>
+body {
+  font-size: 15px;
+}
+
+h1, h2, h3 {
+  color: #17365d;
+}
+
+.verdict-box {
+  border-left: 8px solid #17365d;
+  background-color: #f2f6fa;
+  padding: 18px;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+.warning-box {
+  border-left: 8px solid #d9534f;
+  background-color: #fdf2f2;
+  padding: 18px;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+.action-box {
+  border-left: 8px solid #f0ad4e;
+  background-color: #fff9ed;
+  padding: 18px;
+  margin: 20px 0;
+  border-radius: 4px;
+}
+
+table {
+  width: 100%;
+}
+
+th {
+  background-color: #17365d;
+  color: white;
+}
+
+.page-break {
+  page-break-before: always;
+}
+</style>
+
+# Assessment information
+
+```{r report-information}
+knitr::kable(
+  params$report_info,
+  col.names = c("Report information", "Value"),
+  format = "html",
+  escape = TRUE,
+  table.attr = 'class="table table-striped table-bordered"'
+)
+```
+
+# Overall assessment
+
+<div class="verdict-box">
+
+## `r params$summary$result[params$summary$measure == "Overall AI risk verdict"]`
+
+This is the overall AI RiskCheck verdict after considering inherent risk, safeguards and any mandatory escalation conditions.
+
+</div>
+
+```{r overall-summary}
+knitr::kable(
+  params$summary,
+  col.names = c("Measure", "Result"),
+  format = "html",
+  escape = TRUE,
+  table.attr = 'class="table table-striped table-bordered"'
+)
+```
+
+
+
+# Mandatory escalation conditions
+
+```{r red-flags, results="asis"}
+if (length(params$red_flags) == 0) {
+
+  cat(
+    "<p>No mandatory escalation conditions were identified.</p>"
+  )
+
+} else {
+
+  cat('<div class="warning-box">')
+  cat("<strong>The following escalation conditions were identified:</strong>")
+  cat("<ul>")
+
+  for (flag in params$red_flags) {
+    cat(
+      paste0(
+        "<li>",
+        htmltools::htmlEscape(flag),
+        "</li>"
+      )
+    )
+  }
+
+  cat("</ul>")
+  cat("</div>")
+}
+```
+
+# Risk by assessment domain
+
+```{r domain-chart, fig.width=9, fig.height=6}
+if (nrow(params$domain_scores) > 0) {
+
+  ggplot(
+    params$domain_scores,
+    aes(
+      x = reorder(domain, risk_score),
+      y = risk_score
+    )
+  ) +
+    geom_col(fill = "#2c6f9e") +
+    geom_text(
+      aes(
+        label = paste0(
+          round(risk_score),
+          "%"
+        )
+      ),
+      hjust = -0.1
+    ) +
+    coord_flip() +
+    scale_y_continuous(
+      limits = c(0, 110),
+      labels = function(x) {
+        paste0(x, "%")
+      }
+    ) +
+    labs(
+      x = NULL,
+      y = "Risk / control concern",
+      title = "AI risk profile"
+    ) +
+    theme_minimal(
+      base_size = 12
+    )
+}
+```
+
+```{r domain-table}
+domain_table <- params$domain_scores %>%
+  select(
+    Domain = domain,
+    `Risk / control concern` = risk_score,
+    Rating = rating
+  ) %>%
+  mutate(
+    `Risk / control concern` = paste0(
+      `Risk / control concern`,
+      "%"
+    )
+  )
+
+knitr::kable(
+  domain_table,
+  format = "html",
+  escape = TRUE,
+  table.attr = 'class="table table-striped table-bordered"'
+)
+```
+
+# Recommended assurance
+
+```{r recommendations, results="asis"}
+cat("<ul>")
+
+for (recommendation in params$recommendations) {
+  cat(
+    paste0(
+      "<li>",
+      htmltools::htmlEscape(recommendation),
+      "</li>"
+    )
+  )
+}
+
+cat("</ul>")
+```
+
+<div class="page-break"></div>
+
+# Assessment answers
+
+The tables below provide a summary of every assessment question, the selected answer, the numerical rating and the resulting level of concern.
+
+```{r answer-summary, results="asis"}
+answer_domains <- unique(
+  params$answers$domain
+)
+
+for (current_domain in answer_domains) {
+
+  cat(
+    paste0(
+      "<h2>",
+      htmltools::htmlEscape(current_domain),
+      "</h2>"
+    )
+  )
+
+  domain_answers <- params$answers %>%
+    filter(
+      domain == current_domain
+    ) %>%
+    transmute(
+      Question = question,
+      Answer = response_label,
+      Rating = response_rating,
+      Concern = concern_rating,
+      Weight = weight
+    )
+
+  print(
+    knitr::kable(
+      domain_answers,
+      format = "html",
+      escape = TRUE,
+      row.names = FALSE,
+      table.attr = 'class="table table-striped table-bordered"'
+    )
+  )
+}
+```
+
