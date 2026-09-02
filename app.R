@@ -573,142 +573,37 @@ ui <- page_navbar(
     "Results",
 
     div(
+      accordion(
 
-      class = "container-fluid mt-4",
+        accordion_panel(
+          "Overall Risk Summary",
 
-      fluidRow(
-
-        column(
-
-          4,
-
-          card(
-
-            card_header("AI RiskCheck verdict"),
-
-            uiOutput("risk_badge"),
-
-            h3(textOutput("residual_score_text")),
-
-            p("Residual risk")
-
+          fluidRow(
+            column(4, uiOutput("risk_badge")),
+            column(4, h2(textOutput("inherent_label"))),
+            column(4, h2(textOutput("control_label")))
           )
-
         ),
 
-        column(
-
-          4,
-
-          card(
-
-            card_header("Inherent risk"),
-
-            h2(textOutput("inherent_label")),
-
-            h5(textOutput("inherent_score_text")),
-
-            p(
-              "Risk associated with the use case before safeguards are considered."
-            )
-
-          )
-
+        accordion_panel(
+          "Risk Profile",
+          plotOutput("risk_plot", height = "450px")
         ),
 
-        column(
+        accordion_panel(
+          "Areas Requiring Attention",
+          DTOutput("risk_table")
+        ),
 
-          4,
+        accordion_panel(
+          "Recommended Assurance",
+          uiOutput("recommendations")
+        ),
 
-          card(
-
-            card_header("Control strength"),
-
-            h2(textOutput("control_label")),
-
-            h5(textOutput("control_score_text")),
-
-            p(
-              "Strength of the safeguards currently in place."
-            )
-
-          )
-
+        accordion_panel(
+          "What Should Happen Next?",
+          uiOutput("overall_action")
         )
-
-      ),
-
-      br(),
-
-      fluidRow(
-
-        column(
-
-          7,
-
-          card(
-
-            full_screen = TRUE,
-
-            card_header(
-              "Where AI RiskCheck found risk"
-            ),
-
-            plotOutput(
-              "risk_plot",
-              height = "450px"
-            )
-
-          )
-
-        ),
-
-        column(
-
-          5,
-
-          card(
-
-            card_header(
-              "What should happen next?"
-            ),
-
-            uiOutput(
-              "overall_action"
-            )
-
-          )
-
-        )
-
-      ),
-
-      br(),
-
-      card(
-
-        card_header(
-          "Areas requiring attention"
-        ),
-
-        DTOutput(
-          "risk_table"
-        )
-
-      ),
-
-      br(),
-
-      card(
-
-        card_header(
-          "Recommended assurance"
-        ),
-
-        uiOutput(
-          "recommendations"
-        )
-
       ),
 
       card(
@@ -753,6 +648,7 @@ ui <- page_navbar(
   )
 
 )
+
 
 
 # ============================================================
@@ -1284,7 +1180,7 @@ server <- function(input, output, session) {
               content = prompt
             )
           ),
-          max_tokens = 500
+          max_tokens = 2000
         ),
         auto_unbox = TRUE
       ) %>%
@@ -1537,7 +1433,7 @@ server <- function(input, output, session) {
       "Use clear British English. ",
       "Do not recalculate or contradict the supplied numerical scores. ",
       "Do not infer controls that have not been recorded. ",
-      "Keep the response under 400 words."
+      "Limit each section to 50 words except principal risks"
     )
   })
 
