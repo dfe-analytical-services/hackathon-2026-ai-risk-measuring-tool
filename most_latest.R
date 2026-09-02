@@ -22,16 +22,44 @@ library(DT)
 # ============================================================
 
 APP_NAME <- "AI RiskCheck"
-
-APP_VERSION <- "0.6 Prototype"
+APP_VERSION <- "0.9 Prototype"
 
 APP_LAST_UPDATED <- "2 September 2026"
+REFERENCES_LAST_REVIEWED <- "2 September 2026"
 
-GUIDANCE_LAST_REVIEWED <- "2 September 2026"
+TOTAL_ASSESSMENT_QUESTIONS <- 25
 
 
 # ============================================================
-# 3. ASSESSMENT MATRIX
+# 3. RESPONSE OPTIONS
+# ============================================================
+
+# Risk question:
+# Higher number = greater inherent risk
+
+risk_options <- c(
+  "None / negligible" = 0,
+  "Low" = 1,
+  "Moderate" = 2,
+  "High" = 3,
+  "Very high" = 4
+)
+
+
+# Control question:
+# Higher number = stronger control
+
+control_options <- c(
+  "No" = 0,
+  "Mostly no" = 1,
+  "Partly" = 2,
+  "Mostly yes" = 3,
+  "Yes" = 4
+)
+
+
+# ============================================================
+# 4. 25 QUESTION ASSESSMENT MATRIX
 # ============================================================
 
 questions <- tribble(
@@ -48,952 +76,537 @@ questions <- tribble(
   
   
   # ==========================================================
-  # PURPOSE & APPROPRIATENESS
+  # 1. PURPOSE, VALUE & APPROPRIATENESS
+  # 3 QUESTIONS
   # ==========================================================
   
   "purpose_1",
-  "Purpose & appropriateness",
-  "Is the problem or use case clearly defined?",
-  "The AI application should address a clearly defined analytical or operational problem.",
+  "Purpose, value & appropriateness",
+  "Is there a clearly defined problem or user need that the AI is intended to address?",
+  paste(
+    "AI should address a clearly understood problem or user need rather",
+    "than being introduced simply because the technology is available."
+  ),
   "control",
-  1,
-  "UK Government AI Playbook",
-  "Understand AI and its limitations",
-  "Clearly define the problem, intended users and expected outcome.",
+  3,
+  "UK Government AI Playbook; NAO Good Practice Guide; AI Opportunities Action Plan",
+  "Clear purpose and user need",
+  paste(
+    "Clearly define the problem, intended users and expected outcome",
+    "before developing or implementing the AI solution."
+  ),
   
   
   "purpose_2",
-  "Purpose & appropriateness",
-  "Is there a clearly identified user need?",
-  "There should be a clear reason why users or stakeholders would benefit from the AI application.",
+  "Purpose, value & appropriateness",
+  "Have non-AI alternatives been considered and is AI a proportionate solution?",
+  paste(
+    "A conventional analytical, statistical, automation or digital approach",
+    "may sometimes meet the need more simply and with less risk."
+  ),
   "control",
-  1,
-  "AI Opportunities Action Plan",
-  "Identify valuable AI opportunities",
-  "Clearly define the user need.",
+  3,
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Use the right tool for the job",
+  paste(
+    "Compare the AI approach with reasonable non-AI alternatives",
+    "and document why AI is appropriate."
+  ),
   
   
   "purpose_3",
-  "Purpose & appropriateness",
-  "Have non-AI alternatives been considered?",
-  "Consider whether conventional analytical, statistical or automation approaches could achieve the same outcome.",
+  "Purpose, value & appropriateness",
+  "Are the expected benefits and measures of success clearly defined?",
+  paste(
+    "The use case should have measurable objectives so that its value,",
+    "effectiveness and suitability for continued use can be assessed."
+  ),
   "control",
-  1,
-  "UK Government AI Playbook",
-  "Use the right tool for the job",
-  "Compare the AI approach with simpler non-AI alternatives.",
-  
-  
-  "purpose_4",
-  "Purpose & appropriateness",
-  "Does using AI provide a clear and measurable benefit?",
-  "Benefits could include improved efficiency, quality, accessibility or consistency.",
-  "control",
-  1,
-  "AI Opportunities Action Plan",
-  "Evaluate AI opportunities",
-  "Define measurable benefits and success criteria.",
+  3,
+  "AI Opportunities Action Plan; NAO Good Practice Guide",
+  "Evaluate value and outcomes",
+  paste(
+    "Define measurable benefits, success criteria and how the team",
+    "will determine whether the use case is successful."
+  ),
   
   
   # ==========================================================
-  # EXTENT OF AI USE
-  # ==========================================================
-  
-  "ai_1",
-  "Extent of AI use",
-  "How much responsibility is delegated to AI?",
-  "Consider whether AI assists, generates, analyses, recommends or makes decisions.",
-  "risk",
-  3,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Ensure human oversight is proportionate to the responsibility delegated to AI.",
-  
-  
-  "ai_2",
-  "Extent of AI use",
-  "Does the AI produce recommendations that could influence decisions?",
-  "AI recommendations may influence analytical, policy or operational decisions.",
-  "risk",
-  3,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Introduce appropriate human review of AI-generated recommendations.",
-  
-  
-  "ai_3",
-  "Extent of AI use",
-  "Can the AI trigger actions without human approval?",
-  "Examples include sending communications, modifying records, updating systems or using tools.",
-  "risk",
-  4,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Require human approval for consequential AI-triggered actions.",
-  
-  
-  # ==========================================================
-  # DATA & PRIVACY
-  # ==========================================================
-  
-  "data_1",
-  "Data & privacy",
-  "What is the highest sensitivity of information processed by the AI?",
-  "Consider public, unpublished official, personal, sensitive or confidential information.",
-  "risk",
-  4,
-  "UK Government AI Playbook",
-  "Lawful and responsible use",
-  "Confirm that the selected AI service is appropriate for the information being processed.",
-  
-  
-  "data_2",
-  "Data & privacy",
-  "Is only the minimum necessary information supplied to the AI?",
-  "Data minimisation reduces privacy, confidentiality and security risks.",
-  "control",
-  3,
-  "Data and AI Ethics Framework",
-  "Privacy",
-  "Remove unnecessary information before supplying data to the AI.",
-  
-  
-  "data_3",
-  "Data & privacy",
-  "Are data-retention arrangements understood?",
-  "Consider whether prompts, uploaded files, retrieved information and outputs are retained.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Data protection",
-  "Confirm and document data-retention arrangements.",
-  
-  
-  "data_4",
-  "Data & privacy",
-  "Is it understood whether information supplied to the AI may be used to train the model?",
-  "Provider model-training arrangements should be understood before departmental information is processed.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Security and data protection",
-  "Confirm whether submitted information may be used for model training.",
-  
-  
-  "data_5",
-  "Data & privacy",
-  "Has privacy or data-protection advice been obtained where required?",
-  "Additional assessment may be necessary where personal information is processed.",
-  "control",
-  3,
-  "ICO AI and Data Protection Guidance",
-  "Accountability",
-  "Seek data-protection advice and consider whether a DPIA is required.",
-  
-  
-  # ==========================================================
-  # IMPACT & CONSEQUENCES
+  # 2. IMPACT & HUMAN OVERSIGHT
+  # 4 QUESTIONS
   # ==========================================================
   
   "impact_1",
-  "Impact & consequences",
-  "How serious would the consequences be if the AI output were materially wrong?",
-  "Consider impacts on analysis, policy, funding, services, decisions or individuals.",
+  "Impact & human oversight",
+  "How serious could the consequences be if the AI output were incorrect, incomplete or misleading?",
+  paste(
+    "Consider impacts on analytical conclusions, publications, policy,",
+    "funding, services, operational activity, public trust or individuals."
+  ),
   "risk",
   5,
-  "UK Government AI Playbook",
-  "Understand AI limitations",
-  "Increase assurance in proportion to the consequences of incorrect outputs.",
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Understand AI limitations and consequences",
+  paste(
+    "Increase testing, review and assurance in proportion to",
+    "the potential consequences of an incorrect output."
+  ),
   
   
   "impact_2",
-  "Impact & consequences",
-  "How widely could an incorrect AI output affect users or stakeholders?",
-  "Consider whether an error affects one analyst, a team, the department, the public or identifiable individuals.",
+  "Impact & human oversight",
+  "Could the AI output influence significant policy, operational, funding, rights, entitlement or individual decisions?",
+  paste(
+    "AI that materially informs consequential decisions requires stronger",
+    "assurance and meaningful human involvement."
+  ),
   "risk",
-  4,
-  "Data and AI Ethics Framework",
-  "Societal impact",
-  "Assess who could be affected and the scale of potential harm.",
+  5,
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Meaningful human control and accountability",
+  paste(
+    "Introduce enhanced assurance and documented human review",
+    "before AI outputs influence consequential decisions."
+  ),
   
   
   "impact_3",
-  "Impact & consequences",
-  "Could the AI influence policy, funding or operational decisions?",
-  "Consider both direct and indirect influence on decision-making.",
-  "risk",
-  4,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Introduce enhanced assurance where AI materially influences decisions.",
-  
-  
-  "impact_4",
-  "Impact & consequences",
-  "Could the AI affect rights, entitlements, access to services or significant decisions about individuals?",
-  "AI affecting individuals directly should receive particularly strong assurance.",
+  "Impact & human oversight",
+  "Can the AI make decisions, trigger actions or change systems without human approval?",
+  paste(
+    "Greater AI autonomy can increase the consequences of errors,",
+    "unexpected behaviour or malicious inputs."
+  ),
   "risk",
   5,
-  "Data and AI Ethics Framework",
-  "Fairness and societal impact",
-  "Escalate for specialist review and ensure meaningful human decision-making.",
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Meaningful human control",
+  paste(
+    "Require human approval for consequential actions unless autonomous",
+    "operation has been explicitly assessed, justified and assured."
+  ),
+  
+  
+  "human_1",
+  "Impact & human oversight",
+  "Is there meaningful human review by someone able to identify, challenge and intervene on AI outputs?",
+  paste(
+    "Human oversight should be meaningful. A person simply approving an",
+    "AI output without sufficient expertise, evidence or time is not enough."
+  ),
+  "control",
+  5,
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Meaningful human control",
+  paste(
+    "Introduce documented human review by a suitably competent person",
+    "with the authority and evidence needed to challenge the AI."
+  ),
   
   
   # ==========================================================
-  # ACCURACY & ANALYTICAL QUALITY
+  # 3. DATA, PRIVACY & LEGAL
+  # 4 QUESTIONS
+  # ==========================================================
+  
+  "data_1",
+  "Data, privacy & legal",
+  "Is the data used by the AI accurate, sufficiently complete, representative and suitable for the intended purpose?",
+  paste(
+    "Poor-quality, incomplete or unrepresentative data can reduce",
+    "reliability and contribute to misleading or biased outputs."
+  ),
+  "control",
+  5,
+  "NAO Good Practice Guide; Data and AI Ethics Framework",
+  "Data quality and fitness for purpose",
+  paste(
+    "Assess and document data quality, provenance, representativeness,",
+    "known limitations and fitness for purpose."
+  ),
+  
+  
+  "data_2",
+  "Data, privacy & legal",
+  "Does the AI process personal, sensitive, confidential or unpublished departmental information?",
+  paste(
+    "More sensitive information creates greater privacy, confidentiality,",
+    "security and information-management risk."
+  ),
+  "risk",
+  5,
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Privacy, confidentiality and lawful use",
+  paste(
+    "Confirm that the AI service and environment are approved for",
+    "the highest sensitivity of information being processed."
+  ),
+  
+  
+  "data_3",
+  "Data, privacy & legal",
+  "Are the legal basis, data provenance, licensing, copyright and permitted uses understood?",
+  paste(
+    "Teams should understand whether data, documents, code and other",
+    "content can lawfully and appropriately be supplied to and used by AI."
+  ),
+  "control",
+  4,
+  "Data and AI Ethics Framework; UK Government AI Playbook; NAO Good Practice Guide",
+  "Lawful use and data governance",
+  paste(
+    "Document relevant legal basis, provenance, licences, copyright",
+    "restrictions and permitted uses."
+  ),
+  
+  
+  "data_4",
+  "Data, privacy & legal",
+  "Are data retention, processing location and provider use of prompts, files and outputs understood?",
+  paste(
+    "Teams should understand where information is processed, how long",
+    "it is retained and whether it may be reused for training or other purposes."
+  ),
+  "control",
+  5,
+  "UK Government AI Playbook; Data and AI Ethics Framework; NAO Good Practice Guide",
+  "Privacy and data governance",
+  paste(
+    "Confirm and document retention, processing location, deletion",
+    "and provider training or reuse arrangements."
+  ),
+  
+  
+  # ==========================================================
+  # 4. QUALITY, TESTING & RELIABILITY
+  # 4 QUESTIONS
   # ==========================================================
   
   "quality_1",
-  "Accuracy & analytical quality",
-  "Are AI-generated outputs independently checked?",
-  "Important AI-generated analytical outputs should be independently validated.",
+  "Quality, testing & reliability",
+  "Has the AI been tested using representative examples, including relevant edge cases and known failure scenarios?",
+  paste(
+    "Testing should reflect realistic use as well as difficult,",
+    "unusual or deliberately problematic inputs."
+  ),
   "control",
-  4,
-  "UK Government AI Playbook",
-  "Testing and assurance",
-  "Introduce independent QA of AI-generated outputs.",
+  5,
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Testing, evaluation and robustness",
+  paste(
+    "Create a representative evaluation set and test normal cases,",
+    "edge cases and important known failure modes."
+  ),
   
   
   "quality_2",
-  "Accuracy & analytical quality",
-  "Are numerical claims checked against authoritative source data?",
-  "AI-generated statistics and numerical statements should be verified.",
+  "Quality, testing & reliability",
+  "Are important AI-generated facts, evidence, citations, calculations, analytical conclusions or code independently verified?",
+  paste(
+    "This is especially important when analysts use AI to create code,",
+    "generate deliverables, summarise evidence or produce quantitative outputs."
+  ),
   "control",
-  4,
-  "UK Government AI Playbook",
-  "Testing and assurance",
-  "Validate numerical claims against authoritative source data.",
+  5,
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Accuracy and analytical assurance",
+  paste(
+    "Verify important AI-generated content against authoritative evidence,",
+    "source data or appropriate code and analytical testing."
+  ),
   
   
   "quality_3",
-  "Accuracy & analytical quality",
-  "Is AI-generated code reviewed and tested before use?",
-  "Generated code should be understood and tested by a competent analyst.",
+  "Quality, testing & reliability",
+  "Are measurable acceptance criteria and performance measures defined for the AI use case?",
+  paste(
+    "Teams should understand what acceptable performance looks like",
+    "and what level of failure would prevent deployment."
+  ),
   "control",
-  3,
-  "UK Government AI Playbook",
-  "Understand AI limitations",
-  "Introduce code review and appropriate testing.",
+  4,
+  "NAO Good Practice Guide; AI Opportunities Action Plan",
+  "Evaluation and evidence",
+  paste(
+    "Define measurable performance criteria, acceptable error thresholds",
+    "and conditions for proceeding, revising or stopping the use case."
+  ),
   
   
   "quality_4",
-  "Accuracy & analytical quality",
-  "Has the AI system been evaluated using known examples or a representative test set?",
-  "Representative testing can help identify systematic errors and unexpected behaviour.",
+  "Quality, testing & reliability",
+  "Can important AI-assisted outputs be traced to their evidence and reproduced or reconstructed where necessary?",
+  paste(
+    "Traceability and reproducibility support quality assurance,",
+    "investigation, audit and understanding of how outputs were produced."
+  ),
   "control",
   4,
-  "NIST AI Risk Management Framework",
-  "Measure",
-  "Create a representative evaluation dataset.",
-  
-  
-  "quality_5",
-  "Accuracy & analytical quality",
-  "Are measurable accuracy or performance criteria defined?",
-  "The team should understand what acceptable AI performance looks like.",
-  "control",
-  3,
-  "AI Assurance Guidance",
-  "Measure and evaluate",
-  "Define measurable acceptance criteria.",
-  
-  
-  "quality_6",
-  "Accuracy & analytical quality",
-  "Has failure behaviour been tested?",
-  "Testing should include difficult, unusual and deliberately problematic inputs.",
-  "control",
-  3,
-  "NIST AI Risk Management Framework",
-  "Measure",
-  "Test edge cases and known failure scenarios.",
-  
-  
-  "quality_7",
-  "Accuracy & analytical quality",
-  "Are material model, prompt or configuration changes retested?",
-  "Changes can alter AI behaviour and may require reassessment.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Lifecycle management",
-  "Introduce change control and regression testing.",
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Transparency and reproducibility",
+  paste(
+    "Retain appropriate records of models, prompts, data sources,",
+    "retrieved documents, important settings and analytical decisions."
+  ),
   
   
   # ==========================================================
-  # FAIRNESS, BIAS & ETHICS
+  # 5. FAIRNESS, TRANSPARENCY & STAKEHOLDERS
+  # 3 QUESTIONS
   # ==========================================================
   
-  "fairness_1",
-  "Bias, fairness & ethics",
-  "Could AI outputs affect people or groups differently?",
-  "Consider demographic groups, protected characteristics and vulnerable users.",
+  "ethics_1",
+  "Fairness, transparency & stakeholders",
+  "Could the AI create unfair, biased or materially different outcomes for particular people or groups?",
+  paste(
+    "Consider protected characteristics, accessibility, vulnerable groups,",
+    "representation in data and differences in model performance."
+  ),
   "risk",
-  4,
-  "Data and AI Ethics Framework",
-  "Fairness",
-  "Identify groups that could experience different outcomes.",
+  5,
+  "Data and AI Ethics Framework; UK Government AI Playbook",
+  "Fairness and prevention of harm",
+  paste(
+    "Identify relevant groups and evaluate whether outputs, error rates",
+    "or impacts differ unfairly between them."
+  ),
   
   
-  "fairness_2",
-  "Bias, fairness & ethics",
-  "Has potential bias or differential performance been assessed?",
-  "Where relevant, compare system performance across different groups.",
+  "transparency_1",
+  "Fairness, transparency & stakeholders",
+  "Is it clear to users where AI has been used and what its important limitations and uncertainties are?",
+  paste(
+    "Users should understand material AI involvement so they can",
+    "interpret outputs appropriately and avoid over-reliance."
+  ),
   "control",
   4,
-  "Data and AI Ethics Framework",
-  "Fairness",
-  "Evaluate performance and error rates across relevant groups.",
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Transparency and explainability",
+  paste(
+    "Document and communicate where AI is used, important limitations",
+    "and circumstances where outputs should not be relied on."
+  ),
   
-  
-  "fairness_3",
-  "Bias, fairness & ethics",
-  "Could false positives or false negatives disproportionately affect a particular group?",
-  "Different types of AI errors can have different consequences.",
-  "risk",
-  3,
-  "Data and AI Ethics Framework",
-  "Fairness",
-  "Assess the distribution and consequences of AI errors.",
-  
-  
-  "fairness_4",
-  "Bias, fairness & ethics",
-  "Is there a clear public or organisational benefit from the AI use case?",
-  "Benefits should be identifiable and proportionate to potential risks.",
-  "control",
-  2,
-  "Data and AI Ethics Framework",
-  "Societal impact",
-  "Document the expected benefit and who receives it.",
-  
-  
-  # ==========================================================
-  # LEGAL, IP & CONTENT
-  # ==========================================================
-  
-  "legal_1",
-  "Legal, IP & content",
-  "Could copyrighted, licensed or third-party material be provided to the AI?",
-  "Consider documents, publications, code, images or other material that may have restrictions on reuse or processing.",
-  "risk",
-  3,
-  "DfE Generative AI Guidance",
-  "Intellectual property",
-  "Confirm that the material can appropriately be supplied to and processed by the AI system.",
-  
-  
-  "legal_2",
-  "Legal, IP & content",
-  "Could AI-generated material create intellectual-property or copyright concerns?",
-  "Generated text, code, images or other outputs may require checks before reuse or publication.",
-  "risk",
-  3,
-  "DfE Generative AI Guidance",
-  "Intellectual property",
-  "Review generated material for potential copyright, licensing or reuse concerns.",
-  
-  
-  "legal_3",
-  "Legal, IP & content",
-  "Have relevant legal or commercial restrictions been considered?",
-  "Consider contractual restrictions, supplier agreements, software licences and other legal requirements.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Lawful and responsible use",
-  "Seek legal, commercial or procurement advice where required.",
-  
-  
-  "legal_4",
-  "Legal, IP & content",
-  "Are the AI provider's terms of use appropriate for the intended use case?",
-  "Provider terms may affect data use, generated content, liability and permitted uses.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Lawful and responsible use",
-  "Review provider terms before operational deployment.",
-  
-  
-  "legal_5",
-  "Legal, IP & content",
-  "Could confidential or commercially sensitive information be exposed through the AI system?",
-  "Consider supplier, contract, procurement or other internal departmental information.",
-  "risk",
-  4,
-  "UK Government AI Playbook",
-  "Security and confidentiality",
-  "Review whether confidential or commercially sensitive information should be processed by the AI system.",
-  
-  
-  # ==========================================================
-  # STAKEHOLDERS & END USERS
-  # ==========================================================
   
   "stakeholder_1",
-  "Stakeholders & end users",
-  "Are the intended users of the AI-assisted output clearly identified?",
-  "Understanding who relies on the output helps determine the appropriate level of assurance.",
+  "Fairness, transparency & stakeholders",
+  "Have the people who use, rely on or may be affected by the AI been identified, and have wider impacts and routes for feedback or challenge been considered?",
+  paste(
+    "Consider end users, affected groups, accessibility, public trust,",
+    "wider societal impacts and ways to report or challenge problems."
+  ),
   "control",
-  2,
-  "UK Government AI Playbook",
-  "Understand users and impacts",
-  "Identify intended users and how they will use the output.",
-  
-  
-  "stakeholder_2",
-  "Stakeholders & end users",
-  "Could users place too much confidence in the AI-generated output?",
-  "AI-generated content can appear confident and authoritative even where it is incomplete or incorrect.",
-  "risk",
-  3,
-  "UK Government AI Playbook",
-  "Understand AI limitations",
-  "Communicate limitations and ensure users apply appropriate professional judgement.",
-  
-  
-  "stakeholder_3",
-  "Stakeholders & end users",
-  "Are users informed about important limitations of the AI system?",
-  "Users should understand limitations that could affect how they interpret or rely on the output.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Transparency",
-  "Provide clear information about important limitations and appropriate use.",
-  
-  
-  "stakeholder_4",
-  "Stakeholders & end users",
-  "Is there a route for users to report incorrect or concerning AI outputs?",
-  "Feedback mechanisms can help identify issues that were not detected during testing.",
-  "control",
-  2,
-  "UK Government AI Playbook",
-  "Lifecycle management",
-  "Provide a clear route for feedback, issue reporting and escalation.",
-  
-  
-  "stakeholder_5",
-  "Stakeholders & end users",
-  "Could users act on the AI output without additional verification?",
-  "Outputs that directly influence action may require stronger review and assurance.",
-  "risk",
   4,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Require proportionate verification before consequential actions are taken.",
+  "Data and AI Ethics Framework; NAO Good Practice Guide",
+  "Stakeholder engagement and societal impact",
+  paste(
+    "Identify relevant stakeholders and affected groups and provide",
+    "proportionate routes for feedback, challenge and redress."
+  ),
   
   
   # ==========================================================
-  # HUMAN OVERSIGHT
-  # ==========================================================
-  
-  "human_1",
-  "Human oversight",
-  "What level of human review takes place before AI outputs are used?",
-  "Human review should be meaningful rather than a simple approval step.",
-  "control",
-  5,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Introduce meaningful review by a suitably competent person.",
-  
-  
-  "human_2",
-  "Human oversight",
-  "Is there a named person accountable for the final output?",
-  "Responsibility should remain clear even when AI contributes to the output.",
-  "control",
-  4,
-  "UK Government AI Playbook",
-  "Accountability",
-  "Assign a named accountable owner.",
-  
-  
-  "human_3",
-  "Human oversight",
-  "Can the reviewer realistically identify and challenge AI errors?",
-  "Consider expertise, workload, time and access to supporting evidence.",
-  "control",
-  4,
-  "UK Government AI Playbook",
-  "Meaningful human control",
-  "Ensure reviewers have sufficient expertise and evidence to challenge the AI.",
-  
-  
-  "human_4",
-  "Human oversight",
-  "Can a human stop or override the AI system where necessary?",
-  "Operational systems should allow effective intervention.",
-  "control",
-  4,
-  "NIST AI Risk Management Framework",
-  "Manage",
-  "Introduce an effective human override or stop mechanism.",
-  
-  
-  # ==========================================================
-  # SECURITY & ROBUSTNESS
+  # 6. SECURITY, PLATFORM & SUPPLIER
+  # 3 QUESTIONS
   # ==========================================================
   
   "security_1",
-  "Security & robustness",
-  "Is the AI service approved for the information being processed?",
-  "Consider departmental technology, security and information-assurance requirements.",
+  "Security, platform & supplier",
+  "Is the AI service or platform approved for the intended use, data and level of access?",
+  paste(
+    "The AI environment should meet departmental security,",
+    "data-handling and access requirements."
+  ),
   "control",
   5,
-  "UK Government AI Playbook",
-  "Security",
-  "Confirm that the AI service is approved for the information being processed.",
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Secure and appropriate AI use",
+  paste(
+    "Confirm that the platform is approved for the intended",
+    "use and information before implementation."
+  ),
   
   
   "security_2",
-  "Security & robustness",
-  "Are appropriate access controls in place?",
-  "Only authorised users should have access to sensitive AI functionality or information.",
+  "Security, platform & supplier",
+  "Have relevant AI-specific security threats and access risks been assessed and mitigated?",
+  paste(
+    "Relevant risks may include prompt injection, data leakage,",
+    "malicious retrieved content, model manipulation and excessive permissions."
+  ),
   "control",
-  3,
-  "NCSC Secure AI System Development",
-  "Secure deployment",
-  "Apply appropriate authentication and least-privilege access.",
+  5,
+  "UK Government AI Playbook; NAO Good Practice Guide",
+  "Security by design",
+  paste(
+    "Assess relevant AI-specific threats, restrict access using",
+    "least privilege and test important security controls."
+  ),
   
   
-  "security_3",
-  "Security & robustness",
-  "Could users or external content manipulate the AI system?",
-  "LLMs may be vulnerable to prompt injection and malicious instructions embedded in content.",
-  "risk",
-  4,
-  "NCSC Secure AI System Development",
-  "Secure design",
-  "Assess prompt-injection and untrusted-input risks.",
-  
-  
-  "security_4",
-  "Security & robustness",
-  "Can the AI access other systems, tools or data sources?",
-  "Tool-enabled or agentic AI can create additional security and operational risks.",
-  "risk",
-  4,
-  "NCSC Secure AI System Development",
-  "Secure deployment",
-  "Restrict tool permissions and apply least privilege.",
-  
-  
-  "security_5",
-  "Security & robustness",
-  "Are logs or audit records retained?",
-  "Logs support monitoring, assurance and incident investigation.",
-  "control",
-  3,
-  "NCSC Secure AI System Development",
-  "Secure operation",
-  "Implement appropriate logging and monitoring.",
-  
-  
-  "security_6",
-  "Security & robustness",
-  "Is there an incident-response process for AI-related security issues?",
-  "Teams should know how AI-related security incidents will be managed.",
-  "control",
-  3,
-  "NCSC Secure AI System Development",
-  "Secure operation",
-  "Document an AI-specific incident-response process.",
-  
-  
-  # ==========================================================
-  # TRANSPARENCY & EXPLAINABILITY
-  # ==========================================================
-  
-  "transparency_1",
-  "Transparency & explainability",
-  "Is the use of AI documented?",
-  "Documentation should describe where AI contributes materially to the process.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Transparency",
-  "Document how and where AI is used.",
-  
-  
-  "transparency_2",
-  "Transparency & explainability",
-  "Are users informed where AI materially contributes to outputs?",
-  "Disclosure should be proportionate to the role and impact of AI.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Transparency",
-  "Clearly communicate material AI involvement.",
-  
-  
-  "transparency_3",
-  "Transparency & explainability",
-  "Are important limitations and uncertainties communicated?",
-  "Users should understand limitations that could affect interpretation.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Be open and collaborative",
-  "Document and communicate important limitations.",
-  
-  
-  "transparency_4",
-  "Transparency & explainability",
-  "Can important AI-supported conclusions be traced back to evidence or source information?",
-  "Traceability supports analytical assurance and reproducibility.",
+  "supplier_1",
+  "Security, platform & supplier",
+  "Are important model, platform and supplier dependencies understood and appropriately managed?",
+  paste(
+    "Consider model ownership, open or proprietary models, supplier terms,",
+    "resilience, model changes, versioning and dependency on third parties."
+  ),
   "control",
   4,
-  "Algorithmic Transparency Recording Standard",
-  "Explainability",
-  "Maintain evidence and source traceability.",
-  
-  
-  "transparency_5",
-  "Transparency & explainability",
-  "Can affected users challenge an AI-supported outcome where appropriate?",
-  "Higher-impact applications may require routes for contestability and redress.",
-  "control",
-  3,
-  "Data and AI Ethics Framework",
-  "Accountability",
-  "Provide an appropriate route to challenge significant AI-supported outcomes.",
+  "NAO Good Practice Guide; UK Government AI Playbook",
+  "Commercial and supplier risk",
+  paste(
+    "Document supplier and model dependencies, terms, versioning,",
+    "resilience arrangements and mitigations."
+  ),
   
   
   # ==========================================================
-  # RECORD KEEPING & REPRODUCIBILITY
-  # ==========================================================
-  
-  "record_1",
-  "Record keeping & reproducibility",
-  "Is the model name and version recorded?",
-  "Model changes can affect behaviour, so recording the version supports reproducibility.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Model specification",
-  "Record the model name, version and date of use.",
-  
-  
-  "record_2",
-  "Record keeping & reproducibility",
-  "Are important prompts or system instructions documented?",
-  "Prompt changes can materially affect AI outputs.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Lifecycle management",
-  "Document important prompts, system instructions and configuration.",
-  
-  
-  "record_3",
-  "Record keeping & reproducibility",
-  "Are important data sources or retrieved documents recorded?",
-  "Knowing which sources contributed to AI outputs supports traceability.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Transparency and traceability",
-  "Record important source data and retrieved documents.",
-  
-  
-  "record_4",
-  "Record keeping & reproducibility",
-  "Can important AI-assisted outputs be reproduced or reconstructed?",
-  "Reproducibility supports QA, audit and investigation.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Explainability and traceability",
-  "Retain sufficient information to reproduce or reconstruct important outputs.",
-  
-  
-  # ==========================================================
-  # GOVERNANCE & LIFECYCLE
+  # 7. GOVERNANCE, ACCOUNTABILITY & SKILLS
+  # 2 QUESTIONS
   # ==========================================================
   
   "governance_1",
-  "Governance & lifecycle",
-  "Is there a named project owner?",
-  "Ownership should remain clear throughout development and operational use.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Organisational assurance",
-  "Assign a named project owner.",
-  
-  
-  "governance_2",
-  "Governance & lifecycle",
-  "Is there a named analytical or technical owner?",
-  "Someone should remain responsible for analytical or technical quality.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Organisational assurance",
-  "Assign an accountable analytical or technical owner.",
-  
-  
-  "governance_3",
-  "Governance & lifecycle",
-  "Is AI performance monitored after implementation?",
-  "Models, prompts, data and user behaviour can change over time.",
-  "control",
-  4,
-  "NIST AI Risk Management Framework",
-  "Manage",
-  "Introduce ongoing performance monitoring.",
-  
-  
-  "governance_4",
-  "Governance & lifecycle",
-  "Is there an escalation process for incidents or unexpected behaviour?",
-  "Teams should know how significant AI issues will be escalated.",
-  "control",
-  4,
-  "UK Government AI Playbook",
-  "Organisational assurance",
-  "Define escalation routes and responsibilities.",
-  
-  
-  "governance_5",
-  "Governance & lifecycle",
-  "Is there a process for stopping or decommissioning the AI system?",
-  "Operational AI systems should have a defined exit process.",
-  "control",
-  3,
-  "NIST AI Risk Management Framework",
-  "Manage",
-  "Create a process for suspension and decommissioning.",
-  
-  
-  "governance_6",
-  "Governance & lifecycle",
-  "Are changes to models, prompts or data sources controlled?",
-  "Material changes should be documented, tested and reassessed.",
-  "control",
-  4,
-  "UK Government AI Playbook",
-  "Lifecycle management",
-  "Introduce formal change control.",
-  
-  
-  # ==========================================================
-  # MODEL, PLATFORM & OPERATIONAL EXPOSURE
-  # ==========================================================
-  
-  "model_1",
-  "Model, platform & operational exposure",
-  "Is the AI accessed through a DfE-approved or otherwise approved environment?",
-  "The platform should be appropriate for the information and use case.",
+  "Governance, accountability & skills",
+  "Is there clear ownership, accountability and an appropriate route for review, escalation and incident management?",
+  paste(
+    "AI use cases should have clear responsibility for the system and",
+    "its outputs, with routes to escalate concerns and manage incidents."
+  ),
   "control",
   5,
-  "UK Government AI Playbook",
-  "Security",
-  "Confirm platform approval before processing departmental information.",
+  "NAO Use of AI in Government; UK Government AI Playbook; Data and AI Ethics Framework",
+  "Accountability and organisational assurance",
+  paste(
+    "Assign a named accountable owner and document review,",
+    "escalation and incident-management arrangements."
+  ),
   
-  
-  "model_2",
-  "Model, platform & operational exposure",
-  "Is the model and model version recorded?",
-  "Recording model versions supports reproducibility and change management.",
-  "control",
-  3,
-  "Algorithmic Transparency Recording Standard",
-  "Model specification",
-  "Record the model name and model version.",
-  
-  
-  "model_3",
-  "Model, platform & operational exposure",
-  "Are provider data-processing arrangements understood?",
-  "Understand where data is processed, retained and potentially reused.",
-  "control",
-  4,
-  "UK Government AI Playbook",
-  "Security and data protection",
-  "Document provider data-processing arrangements.",
-  
-  
-  "model_4",
-  "Model, platform & operational exposure",
-  "Is model usage monitored?",
-  "Monitoring may include requests, token use, API activity, errors and abnormal usage.",
-  "control",
-  2,
-  "NCSC Secure AI System Development",
-  "Secure operation",
-  "Introduce model-usage monitoring.",
-  
-  
-  "model_5",
-  "Model, platform & operational exposure",
-  "Are appropriate usage or spending limits in place?",
-  "Limits can help manage unexpected costs and uncontrolled scaling.",
-  "control",
-  1,
-  "AI Opportunities Action Plan",
-  "Scale responsibly",
-  "Introduce proportionate usage and spending limits.",
-  
-  
-  "model_6",
-  "Model, platform & operational exposure",
-  "Could the model or provider change without the application being retested?",
-  "Provider-side model changes may alter system behaviour.",
-  "risk",
-  3,
-  "UK Government AI Playbook",
-  "Lifecycle management",
-  "Monitor model changes and retest material updates.",
-  
-  
-  # ==========================================================
-  # SKILLS & CAPABILITY
-  # ==========================================================
   
   "skills_1",
-  "Skills & capability",
-  "Does the team have sufficient AI expertise?",
-  "Teams should understand the technology, capabilities and limitations.",
+  "Governance, accountability & skills",
+  "Does the team have sufficient AI, analytical and domain expertise to use, evaluate and challenge the system effectively?",
+  paste(
+    "Safe AI adoption requires people who understand the technology,",
+    "its limitations, analytical context and subject matter."
+  ),
   "control",
-  3,
-  "UK Government AI Playbook",
-  "Use appropriate skills",
-  "Ensure appropriate AI expertise is available.",
-  
-  
-  "skills_2",
-  "Skills & capability",
-  "Does the team have sufficient analytical or domain expertise?",
-  "AI should complement rather than replace appropriate expertise.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Use appropriate skills",
-  "Ensure appropriate analytical and domain expertise.",
-  
-  
-  "skills_3",
-  "Skills & capability",
-  "Have relevant specialist teams been consulted where required?",
-  "Examples include analytical QA, security, information assurance, legal and data protection.",
-  "control",
-  3,
-  "UK Government AI Playbook",
-  "Organisational assurance",
-  "Seek specialist advice where required.",
+  4,
+  "NAO Use of AI in Government; NAO Good Practice Guide; UK Government AI Playbook",
+  "Skills and capability",
+  paste(
+    "Ensure appropriate AI, analytical and domain expertise is available",
+    "and seek specialist support where necessary."
+  ),
   
   
   # ==========================================================
-  # ENVIRONMENTAL & SOCIETAL IMPACT
+  # 8. LIFECYCLE, MONITORING & SCALE
+  # 2 QUESTIONS
   # ==========================================================
   
-  "society_1",
-  "Environmental & societal impact",
-  "Could the AI create wider unintended consequences for users or society?",
-  "Consider accessibility, exclusion, misinformation, trust, deskilling or behavioural effects.",
-  "risk",
-  2,
-  "Data and AI Ethics Framework",
-  "Societal impact",
-  "Identify wider impacts and appropriate mitigations.",
-  
-  
-  "society_2",
-  "Environmental & societal impact",
-  "Has the environmental impact of the AI approach been considered?",
-  "Consider whether model size and compute requirements are proportionate to the task.",
+  "lifecycle_1",
+  "Lifecycle, monitoring & scale",
+  "Is AI performance monitored after deployment and are material model, prompt, data or configuration changes controlled and retested?",
+  paste(
+    "AI behaviour may change because models, prompts, data sources,",
+    "providers, user behaviour or surrounding environments change."
+  ),
   "control",
-  1,
-  "Data and AI Ethics Framework",
-  "Environmental sustainability",
-  "Consider whether a smaller or more efficient approach could meet the need."
+  5,
+  "UK Government AI Playbook; Data and AI Ethics Framework",
+  "Lifecycle management and continuous assurance",
+  paste(
+    "Introduce ongoing monitoring, change control and proportionate",
+    "retesting following material changes."
+  ),
+  
+  
+  "lifecycle_2",
+  "Lifecycle, monitoring & scale",
+  "Before moving from exploration or pilot into operational or scaled use, has the AI been formally evaluated and can it be paused or stopped if necessary?",
+  paste(
+    "A successful prototype should not automatically become an operational",
+    "service. Evidence, controls and ownership should be reviewed before scaling."
+  ),
+  "control",
+  5,
+  "NAO Good Practice Guide; AI Opportunities Action Plan; UK Government AI Playbook",
+  "Pilot, evaluate and scale responsibly",
+  paste(
+    "Complete formal evaluation before operational deployment and",
+    "establish clear pause, rollback or decommissioning arrangements."
+  )
   
 )
 
 
 # ============================================================
-# 4. RESPONSE OPTIONS
+# CHECK THERE ARE EXACTLY 25 QUESTIONS
 # ============================================================
 
-risk_options <- c(
-  "None / negligible" = 0,
-  "Low" = 1,
-  "Moderate" = 2,
-  "High" = 3,
-  "Very high" = 4
-)
-
-
-control_options <- c(
-  "Not implemented / No" = 0,
-  "Limited" = 1,
-  "Partially implemented" = 2,
-  "Mostly implemented" = 3,
-  "Fully implemented / Yes" = 4
+stopifnot(
+  nrow(questions) == 25
 )
 
 
 # ============================================================
-# 5. GUIDANCE LIBRARY
+# 5. REFERENCES
 # ============================================================
 
-guidance <- tribble(
+references <- tribble(
   
   ~source,
   ~organisation,
+  ~date,
   ~purpose,
   ~url,
   
-  "Generative artificial intelligence in education",
-  "Department for Education",
-  "DfE-specific guidance on generative AI use in education.",
-  "https://www.gov.uk/government/publications/generative-artificial-intelligence-in-education/generative-artificial-intelligence-ai-in-education",
+  "Use of artificial intelligence in government",
+  "National Audit Office",
+  "March 2024",
+  paste(
+    "Review of AI adoption across government, including governance,",
+    "skills, testing and scaling."
+  ),
+  "https://www.nao.org.uk/wp-content/uploads/2024/03/use-of-artificial-intelligence-in-government.pdf",
   
-  "UK Government AI Playbook",
+  "Good practice guide for organisations using AI",
+  "National Audit Office",
+  "May 2026",
+  paste(
+    "Good-practice guidance covering governance, data, security,",
+    "skills, evaluation, risk management and scaling."
+  ),
+  "https://www.nao.org.uk/wp-content/uploads/2026/05/good-practice-guide-for-organisations-using-ai.pdf",
+  
+  "Artificial Intelligence Playbook for the UK Government",
   "UK Government",
-  "Government principles for safe, responsible and effective AI use.",
+  "2025",
+  paste(
+    "Government guidance for using AI safely, securely,",
+    "responsibly and effectively."
+  ),
   "https://www.gov.uk/government/publications/ai-playbook-for-the-uk-government/artificial-intelligence-playbook-for-the-uk-government-html",
   
   "AI Opportunities Action Plan",
   "UK Government",
-  "Guidance on identifying, piloting, evaluating and scaling AI opportunities.",
+  "2025",
+  paste(
+    "Government approach to identifying, piloting, evaluating",
+    "and scaling AI opportunities."
+  ),
   "https://www.gov.uk/government/publications/ai-opportunities-action-plan/ai-opportunities-action-plan",
   
   "Data and AI Ethics Framework",
   "UK Government",
-  "Framework covering transparency, accountability, fairness, privacy, societal impact and sustainability.",
-  "https://www.gov.uk/government/publications/data-ethics-framework",
-  
-  "Algorithmic Transparency Recording Standard",
-  "UK Government",
-  "Standard for documenting AI and algorithmic systems used by public bodies.",
-  "https://www.gov.uk/government/collections/algorithmic-transparency-recording-standard-hub",
-  
-  "Introduction to AI Assurance",
-  "UK Government",
-  "Guidance on measuring, evaluating and communicating AI trustworthiness.",
-  "https://www.gov.uk/government/publications/introduction-to-ai-assurance",
-  
-  "Secure AI System Development",
-  "National Cyber Security Centre",
-  "Guidance covering secure AI design, development, deployment and operation.",
-  "https://www.ncsc.gov.uk/collection/guidelines-secure-ai-system-development",
-  
-  "AI Risk Management Framework",
-  "NIST",
-  "International AI risk-management framework covering Govern, Map, Measure and Manage.",
-  "https://www.nist.gov/itl/ai-risk-management-framework",
-  
-  "OECD AI Principles",
-  "OECD",
-  "International principles for trustworthy and responsible AI.",
-  "https://www.oecd.org/en/topics/ai-principles.html"
-  
+  "2025",
+  paste(
+    "Framework covering transparency, accountability, fairness,",
+    "privacy, societal impact and safety."
+  ),
+  "https://www.gov.uk/government/publications/data-ethics-framework/data-and-ai-ethics-framework"
 )
 
 
@@ -1002,11 +615,6 @@ guidance <- tribble(
 # ============================================================
 
 ui <- page_navbar(
-  
-  
-  # ==========================================================
-  # NAVBAR
-  # ==========================================================
   
   title = div(
     
@@ -1018,13 +626,12 @@ ui <- page_navbar(
     
     tags$img(
       src = "dfe-logo.png",
-      height = "38px"
+      height = "38px",
+      alt = "Department for Education logo"
     ),
     
     strong(APP_NAME)
-    
   ),
-  
   
   theme = bs_theme(
     version = 5,
@@ -1033,7 +640,7 @@ ui <- page_navbar(
   
   
   # ==========================================================
-  # START TAB
+  # TAB 1 - OVERVIEW
   # ==========================================================
   
   nav_panel(
@@ -1043,11 +650,6 @@ ui <- page_navbar(
     div(
       
       class = "container mt-4",
-      
-      
-      # --------------------------------------------------------
-      # INTRODUCTION
-      # --------------------------------------------------------
       
       card(
         
@@ -1064,14 +666,14 @@ ui <- page_navbar(
             
             tags$img(
               src = "dfe-logo.png",
-              height = "55px"
+              height = "55px",
+              alt = "Department for Education logo"
             ),
             
             h1(
               style = "margin:0;",
               APP_NAME
             )
-            
           ),
           
           h3(
@@ -1079,24 +681,29 @@ ui <- page_navbar(
           ),
           
           p(
-            
             class = "lead",
-            
-            "Identify, assess and manage risks when using AI in analytical work."
-            
+            paste(
+              "A simple and consistent way for analytical teams",
+              "to identify and assess risks associated with AI-assisted work."
+            )
           ),
           
           hr(),
           
           p(
-            "AI RiskCheck helps analytical teams identify potential quality, ",
-            "ethical, legal, operational and technical risks associated with ",
-            "using artificial intelligence."
+            paste(
+              "AI is increasingly being used to generate code, create",
+              "deliverables, summarise evidence, analyse data and improve",
+              "the efficiency of analytical processes."
+            )
           ),
           
           p(
-            "The tool provides a consistent framework for reviewing AI use cases ",
-            "and identifying where additional assurance or specialist review may be needed."
+            paste(
+              "AI RiskCheck helps analytical teams identify quality, ethical,",
+              "legal, security, governance and technical risks associated",
+              "with these uses."
+            )
           ),
           
           div(
@@ -1105,18 +712,30 @@ ui <- page_navbar(
             
             strong("Important: "),
             
-            "AI RiskCheck supports professional judgement. It does not replace ",
-            "analytical QA, information assurance, security, legal, ",
-            "data-protection or other required departmental approval processes."
-            
-          )
+            paste(
+              "AI RiskCheck supports professional judgement. It does not",
+              "replace analytical QA, information assurance, security,",
+              "data protection, legal, commercial or other required",
+              "departmental approval processes."
+            )
+          ),
           
+          div(
+            
+            class = "alert alert-secondary",
+            
+            strong("Questions or support: "),
+            
+            paste(
+              "If you are unsure how to answer a question, interpret your",
+              "risk rating or decide what assurance action may be appropriate,",
+              "contact the AOE Centre of Excellence team."
+            )
+          )
         )
-        
       ),
       
       br(),
-      
       
       # --------------------------------------------------------
       # HOW TO USE
@@ -1131,11 +750,11 @@ ui <- page_navbar(
         card_body(
           
           p(
-            "AI RiskCheck contains five tabs. Work through them in order ",
-            "to complete a full assessment."
+            paste(
+              "AI RiskCheck contains five tabs. For a full assessment,",
+              "work through them from left to right."
+            )
           ),
-          
-          br(),
           
           fluidRow(
             
@@ -1143,30 +762,32 @@ ui <- page_navbar(
               
               width = 6,
               
-              h4("1. Start"),
+              h4("1. Overview"),
               
               p(
-                "Read about the purpose of AI RiskCheck and record basic ",
-                "information about your AI use case, including its lifecycle ",
-                "stage and intended users."
+                paste(
+                  "Understand what AI RiskCheck is, when it should",
+                  "be used and what the assessment covers."
+                )
               ),
               
               h4("2. AI & Model Profile"),
               
               p(
-                "Record information about the technology being used, including ",
-                "the AI model, provider, hosting environment and, where relevant, ",
-                "LLM usage, RAG and AI-agent functionality."
+                paste(
+                  "Describe your AI use case and record information",
+                  "about the model, provider, environment and architecture."
+                )
               ),
               
               h4("3. Risk Assessment"),
               
               p(
-                "Complete the structured assessment covering data, impact, ",
-                "analytical quality, fairness, legal risks, stakeholders, ",
-                "human oversight, security, transparency and governance."
+                paste(
+                  "Complete 25 questions covering the main AI risk",
+                  "and assurance areas."
+                )
               )
-              
             ),
             
             column(
@@ -1176,27 +797,26 @@ ui <- page_navbar(
               h4("4. Results"),
               
               p(
-                "Review the overall risk rating, inherent risk, control strength, ",
-                "key risks, red flags and recommended assurance activities."
+                paste(
+                  "Review inherent risk, control strength, residual risk,",
+                  "key risks and recommended assurance actions."
+                )
               ),
               
-              h4("5. Guidance"),
+              h4("5. References"),
               
               p(
-                "View the DfE, UK Government and supporting guidance sources ",
-                "that inform the assessment."
+                paste(
+                  "View the documents used to develop AI RiskCheck",
+                  "and information about the application version."
+                )
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
-      
       
       # --------------------------------------------------------
       # WHEN TO USE
@@ -1211,71 +831,71 @@ ui <- page_navbar(
         card_body(
           
           p(
-            "AI RiskCheck is intended for analytical teams that are exploring, ",
-            "developing, piloting or operating AI-enabled tools and workflows."
-          ),
-          
-          p(
-            "Consider completing an assessment when AI is used to:"
+            paste(
+              "Consider completing AI RiskCheck when developing, piloting,",
+              "using or materially changing an AI-enabled analytical process."
+            )
           ),
           
           tags$ul(
             
             tags$li(
-              "generate, explain or assist with analytical code"
+              "Generating, explaining or assisting with analytical code"
             ),
             
             tags$li(
-              "produce analytical commentary, reports or other deliverables"
+              "Producing analytical commentary, reports or deliverables"
             ),
             
             tags$li(
-              "summarise or synthesise evidence"
+              "Summarising evidence, research or documents"
             ),
             
             tags$li(
-              "analyse, classify or summarise data"
+              "Analysing, classifying or extracting information from data"
             ),
             
             tags$li(
-              "support analytical, policy or operational decisions"
+              "Generating statistics, calculations or quantitative outputs"
             ),
             
             tags$li(
-              "process internal, personal, sensitive or confidential information"
+              "Supporting analytical, policy or operational decisions"
             ),
             
             tags$li(
-              "use an LLM, RAG system, AI agent or machine-learning model"
+              "Automating an analytical process or workflow"
             ),
             
             tags$li(
-              "move from experimentation into pilot or operational use"
+              "Using an LLM, RAG system, AI agent or machine-learning model"
+            ),
+            
+            tags$li(
+              "Moving a prototype or pilot into operational or scaled use"
             )
-            
           ),
           
           div(
             
             class = "alert alert-warning",
             
-            strong("You should reassess the use case when: "),
+            strong("Reassess when: "),
             
-            "the model changes, the data changes, the intended users change, ",
-            "the AI is given more autonomy, the system moves to a new lifecycle ",
-            "stage, or a significant new risk or incident is identified."
-            
+            paste(
+              "the model changes, important prompts change, data sources",
+              "change, users or intended purpose change, AI is given more",
+              "autonomy, the system moves to a new lifecycle stage or",
+              "a significant incident or new risk is identified."
+            )
           )
-          
         )
-        
       ),
       
       br(),
       
-      
       # --------------------------------------------------------
-      # ASSESSMENT SCOPE
+      # ASSESSMENT AREAS
       # --------------------------------------------------------
       
       card(
@@ -1287,274 +907,45 @@ ui <- page_navbar(
         card_body(
           
           p(
-            "The assessment covers the following risk and assurance areas:"
+            "The assessment contains 25 questions across eight areas:"
           ),
           
           fluidRow(
             
             column(
               
-              width = 4,
+              width = 6,
               
               tags$ul(
-                
-                tags$li(
-                  "Purpose & appropriateness"
-                ),
-                
-                tags$li(
-                  "Extent of AI use"
-                ),
-                
-                tags$li(
-                  "Data & privacy"
-                ),
-                
-                tags$li(
-                  "Impact & consequences"
-                ),
-                
-                tags$li(
-                  "Accuracy & analytical quality"
-                )
-                
+                tags$li("Purpose, value & appropriateness"),
+                tags$li("Impact & human oversight"),
+                tags$li("Data, privacy & legal"),
+                tags$li("Quality, testing & reliability")
               )
-              
             ),
             
             column(
               
-              width = 4,
+              width = 6,
               
               tags$ul(
-                
-                tags$li(
-                  "Bias, fairness & ethics"
-                ),
-                
-                tags$li(
-                  "Legal, IP & content"
-                ),
-                
-                tags$li(
-                  "Stakeholders & end users"
-                ),
-                
-                tags$li(
-                  "Human oversight"
-                ),
-                
-                tags$li(
-                  "Security & robustness"
-                )
-                
+                tags$li("Fairness, transparency & stakeholders"),
+                tags$li("Security, platform & supplier"),
+                tags$li("Governance, accountability & skills"),
+                tags$li("Lifecycle, monitoring & scale")
               )
-              
-            ),
-            
-            column(
-              
-              width = 4,
-              
-              tags$ul(
-                
-                tags$li(
-                  "Transparency & explainability"
-                ),
-                
-                tags$li(
-                  "Record keeping & reproducibility"
-                ),
-                
-                tags$li(
-                  "Governance & lifecycle"
-                ),
-                
-                tags$li(
-                  "Model & platform exposure"
-                ),
-                
-                tags$li(
-                  "Skills & capability"
-                ),
-                
-                tags$li(
-                  "Environmental & societal impact"
-                )
-                
-              )
-              
             )
-            
           )
-          
         )
-        
-      ),
-      
-      br(),
-      
-      # --------------------------------------------------------
-      # APP INFORMATION
-      # --------------------------------------------------------
-      
-      card(
-        
-        card_header(
-          h3("AI RiskCheck information")
-        ),
-        
-        card_body(
-          
-          tags$table(
-            
-            class = "table table-striped",
-            
-            tags$tbody(
-              
-              tags$tr(
-                
-                tags$th(
-                  "Application"
-                ),
-                
-                tags$td(
-                  APP_NAME
-                )
-                
-              ),
-              
-              tags$tr(
-                
-                tags$th(
-                  "Application version"
-                ),
-                
-                tags$td(
-                  APP_VERSION
-                )
-                
-              ),
-              
-              tags$tr(
-                
-                tags$th(
-                  "App last updated"
-                ),
-                
-                tags$td(
-                  APP_LAST_UPDATED
-                )
-                
-              ),
-              
-              tags$tr(
-                
-                tags$th(
-                  "Guidance last reviewed"
-                ),
-                
-                tags$td(
-                  GUIDANCE_LAST_REVIEWED
-                )
-                
-              ),
-              
-              tags$tr(
-                
-                tags$th(
-                  "Assessment type"
-                ),
-                
-                tags$td(
-                  "AI risk self-assessment"
-                )
-                
-              ),
-              
-              tags$tr(
-                
-                tags$th(
-                  "Primary audience"
-                ),
-                
-                tags$td(
-                  "DfE analytical teams"
-                )
-                
-              )
-              
-            )
-            
-          ),
-          
-          br(),
-          
-          div(
-            
-            class = "alert alert-secondary",
-            
-            p(
-              strong(
-                "Key guidance informing AI RiskCheck:"
-              )
-            ),
-            
-            tags$ul(
-              
-              tags$li(
-                "DfE Generative Artificial Intelligence in Education guidance"
-              ),
-              
-              tags$li(
-                "Artificial Intelligence Playbook for the UK Government"
-              ),
-              
-              tags$li(
-                "AI Opportunities Action Plan"
-              ),
-              
-              tags$li(
-                "Data and AI Ethics Framework"
-              ),
-              
-              tags$li(
-                "Algorithmic Transparency Recording Standard"
-              ),
-              
-              tags$li(
-                "NCSC Secure AI System Development guidance"
-              ),
-              
-              tags$li(
-                "AI Assurance guidance"
-              ),
-              
-              tags$li(
-                "NIST AI Risk Management Framework"
-              )
-              
-            ),
-            
-            p(
-              "See the Guidance tab for links and further information."
-            )
-            
-          )
-          
-        )
-        
       ),
       
       br()
-      
     )
-    
   ),
   
   
   # ==========================================================
-  # AI & MODEL PROFILE TAB
+  # TAB 2 - AI & MODEL PROFILE
   # ==========================================================
   
   nav_panel(
@@ -1568,12 +959,15 @@ ui <- page_navbar(
       h2("AI & Model Profile"),
       
       p(
-        "Provide information about your AI use case and the technology being assessed."
+        paste(
+          "Provide contextual information about the use case and AI",
+          "technology. These fields do not form part of the 25-question score."
+        )
       ),
       
-      # ========================================================
-      # ABOUT YOUR AI USE CASE
-      # ========================================================
+      # --------------------------------------------------------
+      # USE CASE
+      # --------------------------------------------------------
       
       card(
         
@@ -1594,8 +988,28 @@ ui <- page_navbar(
             "Describe how AI is being used",
             rows = 5,
             placeholder = paste(
-              "Describe the problem, how AI is used,",
-              "what the AI produces and how the output will be used."
+              "Describe the problem, how AI is used, what it produces",
+              "and how the output will be used."
+            )
+          ),
+          
+          checkboxGroupInput(
+            
+            "ai_uses",
+            
+            "How is AI being used in this project?",
+            
+            choices = c(
+              "Generating or assisting with code",
+              "Generating analytical commentary or written deliverables",
+              "Summarising evidence, research or documents",
+              "Analysing or classifying data",
+              "Generating statistics, calculations or quantitative outputs",
+              "Supporting policy or operational decision-making",
+              "Automating an analytical process or workflow",
+              "Searching or retrieving information",
+              "Interacting with other systems or tools",
+              "Other"
             )
           ),
           
@@ -1606,8 +1020,11 @@ ui <- page_navbar(
               width = 6,
               
               selectInput(
+                
                 "lifecycle",
+                
                 "Lifecycle stage",
+                
                 choices = c(
                   "Exploring",
                   "Prototype",
@@ -1616,7 +1033,6 @@ ui <- page_navbar(
                   "Scaled operational service"
                 )
               )
-              
             ),
             
             column(
@@ -1624,32 +1040,32 @@ ui <- page_navbar(
               width = 6,
               
               selectInput(
+                
                 "audience",
-                "Who uses or is affected by the output?",
+                
+                "Who uses or may be affected by the output?",
+                
                 choices = c(
                   "Individual analyst",
                   "Analytical team",
                   "Internal DfE users",
                   "Policy / operational teams",
                   "Senior decision makers",
+                  "External organisations",
                   "Public",
                   "Identifiable individuals"
                 )
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
       
-      # ========================================================
+      # --------------------------------------------------------
       # TECHNOLOGY
-      # ========================================================
+      # --------------------------------------------------------
       
       card(
         
@@ -1660,13 +1076,16 @@ ui <- page_navbar(
         card_body(
           
           selectInput(
+            
             "ai_type",
+            
             "What type of AI is being used?",
+            
             choices = c(
               "Generative AI / LLM",
               "LLM with RAG",
               "AI agent / tool-using LLM",
-              "Machine learning model",
+              "Machine learning / predictive model",
               "Natural language processing",
               "Computer vision",
               "Recommendation system",
@@ -1675,13 +1094,16 @@ ui <- page_navbar(
           ),
           
           selectInput(
+            
             "environment",
-            "What type of environment is being used?",
+            
+            "What type of AI environment is being used?",
+            
             choices = c(
               "DfE-controlled environment",
               "Other government-controlled environment",
               "Approved external service",
-              "Open-source model hosted internally",
+              "Open-source / open-weight model hosted internally",
               "External commercial service",
               "Public AI service",
               "Unknown"
@@ -1689,8 +1111,11 @@ ui <- page_navbar(
           ),
           
           selectInput(
+            
             "provider",
+            
             "Model / AI provider",
+            
             choices = c(
               "DfE internal service",
               "Microsoft / Azure OpenAI",
@@ -1700,6 +1125,7 @@ ui <- page_navbar(
               "Meta",
               "Mistral",
               "Open-source / open-weight model",
+              "Other commercial provider",
               "Other",
               "Unknown"
             )
@@ -1707,38 +1133,55 @@ ui <- page_navbar(
           
           textInput(
             "model_name",
-            "Model name"
+            "Model name",
+            placeholder = "e.g. Claude, GPT, Gemini, Llama"
           ),
           
           textInput(
             "model_version",
-            "Model version"
+            "Model version",
+            placeholder = "Enter version if known"
           ),
           
           selectInput(
+            
             "hosting",
+            
             "Where is the model hosted?",
+            
             choices = c(
               "DfE-managed environment",
-              "Approved cloud environment",
+              "Approved government cloud environment",
               "On-premise / local",
-              "External SaaS",
+              "External SaaS / cloud provider",
               "Public web service",
               "Unknown"
             )
-          )
+          ),
           
+          selectInput(
+            
+            "access_method",
+            
+            "How is the AI accessed?",
+            
+            choices = c(
+              "DfE application",
+              "Databricks",
+              "API",
+              "Web interface",
+              "Locally hosted",
+              "Embedded within another product",
+              "Other"
+            )
+          )
         )
-        
-      )
+      ),
       
-    )
-    
-  )
-      
+      br(),
       
       # --------------------------------------------------------
-      # LLM USAGE
+      # LLM INFORMATION
       # --------------------------------------------------------
       
       conditionalPanel(
@@ -1752,77 +1195,57 @@ ui <- page_navbar(
         card(
           
           card_header(
-            h4("LLM usage")
+            h3("LLM usage")
           ),
           
           card_body(
             
             numericInput(
-              
               "monthly_tokens",
-              
               "Estimated monthly token usage",
-              
               value = 0,
-              
               min = 0
-              
             ),
             
             numericInput(
-              
               "monthly_cost",
-              
               "Estimated monthly AI cost (£)",
-              
               value = 0,
-              
               min = 0
-              
             ),
             
             selectInput(
               
-              "token_monitoring",
+              "usage_monitoring",
               
-              "Is token / API usage monitored?",
+              "Is model / API usage monitored?",
               
               choices = c(
-                
                 "Yes",
                 "Partly",
                 "No",
                 "Unknown"
-                
               )
-              
             ),
             
             selectInput(
               
-              "cost_limits",
+              "usage_limits",
               
               "Are usage or spending limits in place?",
               
               choices = c(
-                
                 "Yes",
                 "Partly",
                 "No",
                 "Unknown"
-                
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
-      
       
       # --------------------------------------------------------
       # RAG
@@ -1838,7 +1261,7 @@ ui <- page_navbar(
         card(
           
           card_header(
-            h4("RAG / retrieval")
+            h3("RAG / retrieval")
           ),
           
           card_body(
@@ -1847,64 +1270,54 @@ ui <- page_navbar(
               
               "rag_external",
               
-              "Can retrieved content contain external or untrusted information?",
+              "Can retrieved information contain external or untrusted content?",
               
               choices = c(
-                
                 "No",
                 "Limited",
                 "Yes",
                 "Unknown"
-                
               )
-              
             ),
             
             selectInput(
               
-              "prompt_injection_test",
+              "rag_permissions",
               
-              "Has prompt injection been tested?",
+              paste(
+                "Are retrieval permissions restricted to information",
+                "the user is authorised to access?"
+              ),
               
               choices = c(
-                
                 "Yes",
                 "Partly",
                 "No",
                 "Unknown"
-                
               )
-              
             ),
             
             selectInput(
               
-              "retrieval_permissions",
+              "prompt_injection_testing",
               
-              "Are retrieval permissions appropriately restricted?",
+              "Has prompt-injection or malicious-document behaviour been tested?",
               
               choices = c(
-                
                 "Yes",
                 "Partly",
                 "No",
                 "Unknown"
-                
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
       
-      
       # --------------------------------------------------------
-      # AI AGENT
+      # AGENT
       # --------------------------------------------------------
       
       conditionalPanel(
@@ -1915,7 +1328,7 @@ ui <- page_navbar(
         card(
           
           card_header(
-            h4("AI agent permissions")
+            h3("AI agent permissions")
           ),
           
           card_body(
@@ -1927,14 +1340,11 @@ ui <- page_navbar(
               "Can the AI execute actions or use external tools?",
               
               choices = c(
-                
                 "No",
                 "Low-impact actions only",
                 "Yes - with human approval",
                 "Yes - autonomously"
-                
               )
-              
             ),
             
             selectInput(
@@ -1944,31 +1354,23 @@ ui <- page_navbar(
               "Are tool permissions restricted using least privilege?",
               
               choices = c(
-                
                 "Yes",
                 "Partly",
                 "No",
                 "Unknown"
-                
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br()
-      
     )
-    
   ),
   
   
   # ==========================================================
-  # RISK ASSESSMENT TAB
+  # TAB 3 - RISK ASSESSMENT
   # ==========================================================
   
   nav_panel(
@@ -1979,9 +1381,7 @@ ui <- page_navbar(
       
       sidebar = sidebar(
         
-        h4(
-          "Assessment progress"
-        ),
+        h4("Assessment progress"),
         
         textOutput(
           "progress_text"
@@ -1996,32 +1396,20 @@ ui <- page_navbar(
         hr(),
         
         p(
-          
-          strong(
-            "Risk questions: "
-          ),
-          
-          "higher responses increase inherent risk."
-          
+          strong("25 questions")
         ),
         
         p(
-          
-          strong(
-            "Control questions: "
-          ),
-          
-          "stronger safeguards reduce residual risk."
-          
+          paste(
+            "Risk questions measure inherent exposure. Control questions",
+            "measure the strength of safeguards currently in place."
+          )
         ),
         
-        hr(),
-        
-        p(
-          "Use the expandable guidance underneath each question ",
-          "to understand why it has been included."
+        div(
+          class = "alert alert-light",
+          "Hover over the blue ⓘ icon beside each question for more information."
         )
-        
       ),
       
       div(
@@ -2031,16 +1419,13 @@ ui <- page_navbar(
         uiOutput(
           "questions_ui"
         )
-        
       )
-      
     )
-    
   ),
   
   
   # ==========================================================
-  # RESULTS TAB
+  # TAB 4 - RESULTS
   # ==========================================================
   
   nav_panel(
@@ -2049,8 +1434,7 @@ ui <- page_navbar(
     
     div(
       
-      class =
-        "container-fluid mt-4",
+      class = "container-fluid mt-4",
       
       h2(
         "AI RiskCheck Assessment Results"
@@ -2071,7 +1455,7 @@ ui <- page_navbar(
           card(
             
             card_header(
-              "Overall risk rating"
+              "Overall rating"
             ),
             
             card_body(
@@ -2090,13 +1474,10 @@ ui <- page_navbar(
               ),
               
               p(
-                "Residual risk score"
+                "Residual risk"
               )
-              
             )
-            
           )
-          
         ),
         
         column(
@@ -2124,13 +1505,10 @@ ui <- page_navbar(
               ),
               
               p(
-                "Risk before safeguards are taken into account."
+                "Risk before existing safeguards are considered."
               )
-              
             )
-            
           )
-          
         ),
         
         column(
@@ -2160,13 +1538,9 @@ ui <- page_navbar(
               p(
                 "Strength of safeguards currently in place."
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
@@ -2188,17 +1562,11 @@ ui <- page_navbar(
             card_body(
               
               plotOutput(
-                
                 "risk_plot",
-                
-                height = "500px"
-                
+                height = "450px"
               )
-              
             )
-            
           )
-          
         ),
         
         column(
@@ -2216,13 +1584,9 @@ ui <- page_navbar(
               uiOutput(
                 "decision_summary"
               )
-              
             )
-            
           )
-          
         )
-        
       ),
       
       br(),
@@ -2230,7 +1594,23 @@ ui <- page_navbar(
       card(
         
         card_header(
-          "Key risks identified"
+          "Escalation / stop conditions"
+        ),
+        
+        card_body(
+          
+          uiOutput(
+            "flag_output"
+          )
+        )
+      ),
+      
+      br(),
+      
+      card(
+        
+        card_header(
+          "Key areas requiring attention"
         ),
         
         card_body(
@@ -2238,45 +1618,7 @@ ui <- page_navbar(
           uiOutput(
             "key_risks"
           )
-          
         )
-        
-      ),
-      
-      br(),
-      
-      card(
-        
-        card_header(
-          "🚩 Red flags / escalation"
-        ),
-        
-        card_body(
-          
-          uiOutput(
-            "red_flag_output"
-          )
-          
-        )
-        
-      ),
-      
-      br(),
-      
-      card(
-        
-        card_header(
-          "Areas requiring attention"
-        ),
-        
-        card_body(
-          
-          DTOutput(
-            "risk_table"
-          )
-          
-        )
-        
       ),
       
       br(),
@@ -2292,9 +1634,39 @@ ui <- page_navbar(
           uiOutput(
             "recommendations"
           )
-          
         )
+      ),
+      
+      br(),
+      
+      card(
         
+        card_header(
+          "Potential limitations to communicate to users"
+        ),
+        
+        card_body(
+          
+          uiOutput(
+            "limitations_output"
+          )
+        )
+      ),
+      
+      br(),
+      
+      card(
+        
+        card_header(
+          "Detailed assessment"
+        ),
+        
+        card_body(
+          
+          DTOutput(
+            "risk_table"
+          )
+        )
       ),
       
       br(),
@@ -2310,101 +1682,126 @@ ui <- page_navbar(
           uiOutput(
             "system_profile"
           )
-          
         )
-        
       ),
       
       br(),
       
       downloadButton(
-        
         "download_assessment",
-        
         "Download AI RiskCheck assessment"
-        
       ),
       
       br(),
       br()
-      
     )
-    
   ),
   
   
   # ==========================================================
-  # GUIDANCE TAB
+  # TAB 5 - REFERENCES
   # ==========================================================
   
   nav_panel(
     
-    "Guidance",
+    "References",
     
     div(
       
       class = "container mt-4",
       
       h2(
-        "AI RiskCheck Guidance Library"
+        "References and supporting documents"
       ),
       
       p(
-        "AI RiskCheck draws on DfE, UK Government and recognised ",
-        "international guidance on responsible AI."
+        paste(
+          "The assessment has been developed with reference to the",
+          "following government and National Audit Office documents."
+        )
       ),
       
       div(
         
-        class =
-          "alert alert-info",
+        class = "alert alert-info",
         
-        strong(
-          "Guidance hierarchy: "
+        strong("Important: "),
+        
+        paste(
+          "AI RiskCheck summarises themes from these documents for",
+          "analytical self-assessment. Consult the original source where",
+          "detailed guidance or specialist interpretation is required."
+        )
+      ),
+      
+      card(
+        
+        card_header(
+          h3("AI RiskCheck information")
         ),
         
-        "DfE and UK Government guidance should take precedence ",
-        "where it applies. International frameworks provide supporting good practice."
-        
+        card_body(
+          
+          tags$table(
+            
+            class = "table table-striped",
+            
+            tags$tbody(
+              
+              tags$tr(
+                tags$th("Application"),
+                tags$td(APP_NAME)
+              ),
+              
+              tags$tr(
+                tags$th("Version"),
+                tags$td(APP_VERSION)
+              ),
+              
+              tags$tr(
+                tags$th("Assessment questions"),
+                tags$td(TOTAL_ASSESSMENT_QUESTIONS)
+              ),
+              
+              tags$tr(
+                tags$th("App last updated"),
+                tags$td(APP_LAST_UPDATED)
+              ),
+              
+              tags$tr(
+                tags$th("References last reviewed"),
+                tags$td(REFERENCES_LAST_REVIEWED)
+              ),
+              
+              tags$tr(
+                tags$th("Primary audience"),
+                tags$td("DfE analytical teams")
+              ),
+              
+              tags$tr(
+                tags$th("Methodology status"),
+                tags$td(
+                  "Prototype - scoring and thresholds require internal validation"
+                )
+              )
+            )
+          )
+        )
       ),
       
       br(),
       
+      h3(
+        "Reference documents"
+      ),
+      
       uiOutput(
-        "guidance_cards"
+        "reference_cards"
       ),
       
-      hr(),
-      
-      h4(
-        "Assessment framework"
-      ),
-      
-      p(
-        paste(
-          "Application version:",
-          APP_VERSION
-        )
-      ),
-      
-      p(
-        paste(
-          "App last updated:",
-          APP_LAST_UPDATED
-        )
-      ),
-      
-      p(
-        paste(
-          "Guidance last reviewed:",
-          GUIDANCE_LAST_REVIEWED
-        )
-      )
-      
+      br()
     )
-    
   )
-  
 )
 
 
@@ -2412,24 +1809,22 @@ ui <- page_navbar(
 # 7. SERVER
 # ============================================================
 
-server <- function(
-    input,
-    output,
-    session
-) {
+server <- function(input, output, session) {
   
   
   # ==========================================================
-  # QUESTION UI
+  # DYNAMIC QUESTION UI
+  #
+  # IMPORTANT:
+  # THIS USES bslib::tooltip()
+  # THERE IS NO tags$details() DROPDOWN IN THIS APP
   # ==========================================================
   
   output$questions_ui <- renderUI({
     
-    domains <-
-      unique(
-        questions$domain
-      )
-    
+    domains <- unique(
+      questions$domain
+    )
     
     tagList(
       
@@ -2439,26 +1834,39 @@ server <- function(
         
         function(domain_name) {
           
-          domain_questions <-
-            questions %>%
+          domain_questions <- questions %>%
             
             filter(
-              domain ==
-                domain_name
+              domain == domain_name
             )
           
           
           card(
             
-            class =
-              "mb-4",
+            class = "mb-4",
             
             card_header(
               
-              h3(
-                domain_name
+              div(
+                
+                style = "
+                  display:flex;
+                  justify-content:space-between;
+                  align-items:center;
+                ",
+                
+                h3(
+                  style = "margin-bottom:0;",
+                  domain_name
+                ),
+                
+                tags$span(
+                  paste0(
+                    nrow(domain_questions),
+                    " questions"
+                  )
+                )
               )
-              
             ),
             
             card_body(
@@ -2468,147 +1876,136 @@ server <- function(
                 map(
                   
                   seq_len(
-                    nrow(
-                      domain_questions
-                    )
+                    nrow(domain_questions)
                   ),
                   
                   function(i) {
                     
-                    q <-
-                      domain_questions[
-                        i,
-                      ]
+                    q <- domain_questions[i, ]
                     
                     
-                    choices <-
-                      if (
-                        q$type ==
-                        "risk"
-                      ) {
-                        
-                        risk_options
-                        
-                      } else {
-                        
-                        control_options
-                        
-                      }
+                    # ------------------------------------------
+                    # RESPONSE OPTIONS
+                    # ------------------------------------------
                     
+                    choices <- if (
+                      q$type == "risk"
+                    ) {
+                      
+                      risk_options
+                      
+                    } else {
+                      
+                      control_options
+                    }
+                    
+                    
+                    # ------------------------------------------
+                    # QUESTION
+                    # ------------------------------------------
                     
                     div(
                       
-                      class =
-                        "mb-4",
+                      class = "mb-4",
                       
-                      h5(
-                        q$question
+                      div(
+                        
+                        style = "
+                          display:flex;
+                          align-items:center;
+                          gap:8px;
+                          margin-bottom:12px;
+                        ",
+                        
+                        tags$span(
+                          
+                          style = "
+                            font-size:1.15rem;
+                            font-weight:500;
+                            line-height:1.35;
+                          ",
+                          
+                          q$question
+                        ),
+                        
+                        
+                        # ======================================
+                        # HOVER TOOLTIP
+                        # ======================================
+                        
+                        bslib::tooltip(
+                          
+                          tags$span(
+                            
+                            style = "
+                              cursor:help;
+                              font-size:19px;
+                              font-weight:bold;
+                              color:#1d70b8;
+                              flex-shrink:0;
+                            ",
+                            
+                            "ⓘ"
+                          ),
+                          
+                          tagList(
+                            
+                            tags$div(
+                              
+                              style = "
+                                max-width:380px;
+                                text-align:left;
+                              ",
+                              
+                              tags$p(
+                                q$help_text
+                              ),
+                              
+                              tags$hr(),
+                              
+                              tags$p(
+                                tags$strong("Reference: "),
+                                q$source
+                              ),
+                              
+                              tags$p(
+                                tags$strong("Relevant principle: "),
+                                q$principle
+                              ),
+                              
+                              tags$p(
+                                tags$strong("Recommended action: "),
+                                q$recommended_action
+                              )
+                            )
+                          ),
+                          
+                          placement = "right"
+                        )
                       ),
                       
-                      p(
-                        
-                        class =
-                          "text-muted",
-                        
-                        q$help_text
-                        
-                      ),
                       
                       radioButtons(
                         
-                        inputId =
-                          q$id,
+                        inputId = q$id,
                         
-                        label =
-                          NULL,
+                        label = NULL,
                         
-                        choices =
-                          choices,
+                        choices = choices,
                         
-                        selected =
-                          NULL
-                        
-                      ),
-                      
-                      tags$details(
-                        
-                        style = "
-                          background:#f7f7f7;
-                          padding:12px;
-                          border-radius:6px;
-                          margin-top:10px;
-                          border:1px solid #e5e5e5;
-                        ",
-                        
-                        tags$summary(
-                          
-                          style = "
-                            cursor:pointer;
-                            font-weight:600;
-                          ",
-                          
-                          "Why are we asking this?"
-                          
-                        ),
-                        
-                        br(),
-                        
-                        p(
-                          q$help_text
-                        ),
-                        
-                        p(
-                          
-                          strong(
-                            "Guidance: "
-                          ),
-                          
-                          q$source
-                          
-                        ),
-                        
-                        p(
-                          
-                          strong(
-                            "Relevant principle: "
-                          ),
-                          
-                          q$principle
-                          
-                        ),
-                        
-                        p(
-                          
-                          strong(
-                            "Recommended action: "
-                          ),
-                          
-                          q$recommended_action
-                          
-                        )
-                        
+                        selected = character(0)
                       ),
                       
                       hr()
-                      
                     )
-                    
                   }
-                  
                 )
-                
               )
-              
             )
-            
           )
-          
         }
-        
       )
-      
     )
-    
   })
   
   
@@ -2630,37 +2027,21 @@ server <- function(
             
             value <- input[[question_id]]
             
-            
             if (
-              
               is.null(value) ||
-              
-              length(value) ==
-              0 ||
-              
-              identical(
-                value,
-                ""
-              )
-              
+              length(value) == 0 ||
+              identical(value, "")
             ) {
               
               NA_real_
               
             } else {
               
-              as.numeric(
-                value
-              )
-              
+              as.numeric(value)
             }
-            
           }
-          
         )
-        
       )
-    
   })
   
   
@@ -2668,94 +2049,108 @@ server <- function(
   # PROGRESS
   # ==========================================================
   
+  completed_questions <- reactive({
+    
+    sum(
+      !is.na(
+        answers()$response
+      )
+    )
+  })
+  
+  
+  assessment_complete <- reactive({
+    
+    completed_questions() ==
+      TOTAL_ASSESSMENT_QUESTIONS
+  })
+  
+  
   output$progress_text <- renderText({
     
-    completed <-
-      sum(
-        !is.na(
-          answers()$response
-        )
-      )
-    
-    
     paste0(
-      
-      completed,
-      
+      completed_questions(),
       " of ",
-      
-      nrow(
-        questions
-      ),
-      
+      TOTAL_ASSESSMENT_QUESTIONS,
       " questions completed"
-      
     )
-    
   })
   
   
   output$progress_bar <- renderUI({
     
-    completed <-
-      sum(
-        !is.na(
-          answers()$response
-        )
-      )
-    
-    
-    percentage <-
-      round(
-        
-        100 *
-          
-          completed /
-          
-          nrow(
-            questions
-          )
-        
-      )
-    
+    percentage <- round(
+      
+      100 *
+        completed_questions() /
+        TOTAL_ASSESSMENT_QUESTIONS
+    )
     
     div(
       
-      class =
-        "progress",
+      class = "progress",
       
       div(
         
-        class =
-          "progress-bar",
+        class = "progress-bar",
         
-        role =
-          "progressbar",
+        role = "progressbar",
         
-        style =
-          paste0(
-            
-            "width:",
-            
-            percentage,
-            
-            "%"
-            
-          ),
+        style = paste0(
+          "width:",
+          percentage,
+          "%"
+        ),
         
         paste0(
-          
           percentage,
-          
           "%"
-          
         )
-        
+      )
+    )
+  })
+  
+  
+  # ==========================================================
+  # RESPONSE LABEL
+  # ==========================================================
+  
+  response_label <- function(
+    type,
+    response
+  ) {
+    
+    if (is.na(response)) {
+      return("Not answered")
+    }
+    
+    
+    if (type == "risk") {
+      
+      labels <- c(
+        "None / negligible",
+        "Low",
+        "Moderate",
+        "High",
+        "Very high"
       )
       
-    )
+    } else {
+      
+      labels <- c(
+        "No",
+        "Mostly no",
+        "Partly",
+        "Mostly yes",
+        "Yes"
+      )
+    }
     
-  })
+    
+    labels[
+      response + 1
+    ]
+  }
   
   
   # ==========================================================
@@ -2768,38 +2163,51 @@ server <- function(
       
       mutate(
         
-        adjusted_score =
-          case_when(
-            
-            type ==
-              "risk" ~
-              
-              response,
-            
-            type ==
-              "control" ~
-              
-              4 -
-              response,
-            
-            TRUE ~
-              
-              NA_real_
-            
-          ),
+        adjusted_score = case_when(
+          
+          type == "risk" ~
+            response,
+          
+          type == "control" ~
+            4 - response,
+          
+          TRUE ~
+            NA_real_
+        ),
         
         weighted_score =
-          
-          adjusted_score *
-          weight,
+          adjusted_score * weight,
         
         maximum_score =
-          
-          4 *
-          weight
+          4 * weight,
         
+        response_text = map2_chr(
+          type,
+          response,
+          response_label
+        ),
+        
+        concern = case_when(
+          
+          is.na(adjusted_score) ~
+            "Not answered",
+          
+          adjusted_score >= 4 ~
+            "Very high",
+          
+          adjusted_score >= 3 ~
+            "High",
+          
+          adjusted_score >= 2 ~
+            "Moderate",
+          
+          adjusted_score >= 1 ~
+            "Low",
+          
+          TRUE ~
+            "No concern"
+        )
       )
-    
   })
   
   
@@ -2809,49 +2217,33 @@ server <- function(
   
   inherent_score <- reactive({
     
-    dat <-
-      answers() %>%
+    dat <- answers() %>%
       
       filter(
-        
-        type ==
-          "risk",
-        
-        !is.na(
-          response
-        )
-        
+        type == "risk",
+        !is.na(response)
       )
     
     
     if (
-      nrow(dat) ==
-      0
+      nrow(dat) == 0
     ) {
       
-      return(
-        0
-      )
-      
+      return(0)
     }
     
     
     100 *
       
       sum(
-        
         dat$response *
           dat$weight
-        
       ) /
       
       sum(
-        
         4 *
           dat$weight
-        
       )
-    
   })
   
   
@@ -2861,507 +2253,237 @@ server <- function(
   
   control_score <- reactive({
     
-    dat <-
-      answers() %>%
+    dat <- answers() %>%
       
       filter(
-        
-        type ==
-          "control",
-        
-        !is.na(
-          response
-        )
-        
+        type == "control",
+        !is.na(response)
       )
     
     
     if (
-      nrow(dat) ==
-      0
+      nrow(dat) == 0
     ) {
       
-      return(
-        0
-      )
-      
+      return(0)
     }
     
     
     100 *
       
       sum(
-        
         dat$response *
           dat$weight
-        
       ) /
       
       sum(
-        
         4 *
           dat$weight
-        
       )
-    
   })
   
   
   # ==========================================================
-  # RED FLAGS
+  # ESCALATION / STOP FLAGS
   # ==========================================================
   
-  red_flags <- reactive({
+  flags <- reactive({
     
-    flags <-
-      character(0)
-    
-    
-    # --------------------------------------------------------
-    # HIGH IMPACT + WEAK HUMAN OVERSIGHT
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$impact_1
-      ) &&
-      
-      !is.null(
-        input$human_1
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$impact_1
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$human_1
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            "High-impact AI use has insufficient meaningful human oversight."
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # SENSITIVE DATA + WEAK PLATFORM
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$data_1
-      ) &&
-      
-      !is.null(
-        input$security_1
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$data_1
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$security_1
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "Sensitive information may be processed",
-              "using an insufficiently approved AI service."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # AUTONOMOUS ACTION + WEAK OVERSIGHT
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$ai_3
-      ) &&
-      
-      !is.null(
-        input$human_1
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$ai_3
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$human_1
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "The AI can trigger significant actions",
-              "without sufficient human approval."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # PUBLIC AI + SENSITIVE DATA
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$environment
-      ) &&
-      
-      !is.null(
-        input$data_1
-      )
-      
-    ) {
-      
-      if (
-        
-        input$environment ==
-        "Public AI service" &&
-        
-        as.numeric(
-          input$data_1
-        ) >=
-        2
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "Potentially sensitive information is being processed",
-              "through a public AI service."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # RIGHTS / ENTITLEMENTS
-    # --------------------------------------------------------
-    
-    if (
-      !is.null(
-        input$impact_4
-      )
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$impact_4
-        ) >=
-        3
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "The AI may affect rights, entitlements",
-              "or significant decisions about individuals."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # HIGH IMPACT + NO USER VERIFICATION
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$impact_1
-      ) &&
-      
-      !is.null(
-        input$stakeholder_5
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$impact_1
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$stakeholder_5
-        ) >=
-        3
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "High-impact AI outputs may be acted on",
-              "without sufficient independent verification."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # COPYRIGHT / IP
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$legal_1
-      ) &&
-      
-      !is.null(
-        input$legal_3
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$legal_1
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$legal_3
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "Copyrighted or licensed material may be processed",
-              "without sufficient legal or commercial review."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # CONFIDENTIAL INFORMATION + WEAK PLATFORM
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$legal_5
-      ) &&
-      
-      !is.null(
-        input$model_1
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$legal_5
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$model_1
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "Confidential or commercially sensitive information",
-              "may be processed through an insufficiently approved environment."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # HIGH IMPACT + WEAK REPRODUCIBILITY
-    # --------------------------------------------------------
-    
-    if (
-      
-      !is.null(
-        input$impact_1
-      ) &&
-      
-      !is.null(
-        input$record_4
-      )
-      
-    ) {
-      
-      if (
-        
-        as.numeric(
-          input$impact_1
-        ) >=
-        3 &&
-        
-        as.numeric(
-          input$record_4
-        ) <=
-        1
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "High-impact AI outputs cannot currently",
-              "be adequately reproduced or reconstructed."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    # --------------------------------------------------------
-    # AI AGENT AUTONOMY
-    # --------------------------------------------------------
-    
-    if (
-      !is.null(
-        input$agent_actions
-      )
-    ) {
-      
-      if (
-        
-        input$agent_actions ==
-        "Yes - autonomously"
-        
-      ) {
-        
-        flags <-
-          c(
-            
-            flags,
-            
-            paste(
-              "The AI agent can execute actions autonomously.",
-              "Specialist review is recommended."
-            )
-            
-          )
-        
-      }
-      
-    }
-    
-    
-    unique(
-      flags
+    result <- tibble(
+      severity = character(),
+      issue = character()
     )
     
+    
+    add_flag <- function(
+    severity,
+    issue
+    ) {
+      
+      result <<- bind_rows(
+        
+        result,
+        
+        tibble(
+          severity = severity,
+          issue = issue
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # STOP:
+    # CONSEQUENTIAL DECISION + WEAK HUMAN REVIEW
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$impact_2) &&
+      !is.null(input$human_1) &&
+      as.numeric(input$impact_2) >= 4 &&
+      as.numeric(input$human_1) <= 1
+    ) {
+      
+      add_flag(
+        "STOP",
+        paste(
+          "The AI may materially influence consequential decisions",
+          "without sufficient meaningful human review."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # STOP:
+    # AUTONOMOUS ACTION
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$impact_3) &&
+      as.numeric(input$impact_3) >= 4
+    ) {
+      
+      add_flag(
+        "STOP",
+        paste(
+          "The AI may make consequential decisions or trigger",
+          "actions without human approval."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # STOP:
+    # SENSITIVE DATA + WEAK PLATFORM APPROVAL
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$data_2) &&
+      !is.null(input$security_1) &&
+      as.numeric(input$data_2) >= 3 &&
+      as.numeric(input$security_1) <= 1
+    ) {
+      
+      add_flag(
+        "STOP",
+        paste(
+          "Sensitive information may be processed through an",
+          "insufficiently approved AI environment."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # ESCALATE:
+    # HIGH IMPACT + WEAK TESTING
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$impact_1) &&
+      !is.null(input$quality_1) &&
+      as.numeric(input$impact_1) >= 3 &&
+      as.numeric(input$quality_1) <= 1
+    ) {
+      
+      add_flag(
+        "ESCALATE",
+        paste(
+          "A high-impact AI use case does not currently have",
+          "sufficient representative testing."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # ESCALATE:
+    # HIGH IMPACT + WEAK OUTPUT QA
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$impact_1) &&
+      !is.null(input$quality_2) &&
+      as.numeric(input$impact_1) >= 3 &&
+      as.numeric(input$quality_2) <= 1
+    ) {
+      
+      add_flag(
+        "ESCALATE",
+        paste(
+          "A high-impact AI use case does not currently have",
+          "sufficient independent verification of its outputs."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # ESCALATE:
+    # FAIRNESS RISK
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$ethics_1) &&
+      as.numeric(input$ethics_1) >= 3
+    ) {
+      
+      add_flag(
+        "ESCALATE",
+        paste(
+          "The use case may create significant fairness",
+          "or differential-impact risks."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # ESCALATE:
+    # WEAK GOVERNANCE
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$governance_1) &&
+      as.numeric(input$governance_1) <= 1
+    ) {
+      
+      add_flag(
+        "ESCALATE",
+        paste(
+          "Ownership, accountability or escalation arrangements",
+          "are currently insufficient."
+        )
+      )
+    }
+    
+    
+    # --------------------------------------------------------
+    # AGENT PROFILE:
+    # AUTONOMOUS ACTION
+    # --------------------------------------------------------
+    
+    if (
+      !is.null(input$agent_actions) &&
+      input$agent_actions ==
+      "Yes - autonomously"
+    ) {
+      
+      add_flag(
+        "STOP",
+        paste(
+          "The AI profile indicates that the agent",
+          "can execute actions autonomously."
+        )
+      )
+    }
+    
+    
+    distinct(
+      result
+    )
   })
   
   
@@ -3371,11 +2493,9 @@ server <- function(
   
   residual_score <- reactive({
     
-    inherent <-
-      inherent_score()
+    inherent <- inherent_score()
     
-    controls <-
-      control_score()
+    controls <- control_score()
     
     
     score <-
@@ -3383,163 +2503,163 @@ server <- function(
       inherent *
       
       (
-        
         1 -
-          
           (
-            
             controls /
               100 *
               0.60
-            
           )
-        
       )
     
     
-    score <-
-      max(
-        score,
-        0
-      )
+    score <- max(
+      score,
+      0
+    )
     
     
     if (
-      
-      length(
-        red_flags()
-      ) >
-      0
-      
+      any(
+        flags()$severity ==
+        "ESCALATE"
+      )
     ) {
       
-      score <-
-        max(
-          score,
-          75
-        )
+      score <- max(
+        score,
+        60
+      )
+    }
+    
+    
+    if (
+      any(
+        flags()$severity ==
+        "STOP"
+      )
+    ) {
       
+      score <- max(
+        score,
+        80
+      )
     }
     
     
     score
-    
   })
   
   
   # ==========================================================
-  # RISK LABEL
+  # OVERALL RISK LABEL
   # ==========================================================
   
   risk_label <- reactive({
     
     if (
-      
-      length(
-        red_flags()
-      ) >
-      0
-      
+      !assessment_complete()
     ) {
       
       return(
-        "STOP / ESCALATE"
+        "INCOMPLETE"
       )
-      
     }
     
     
-    score <-
-      residual_score()
+    if (
+      any(
+        flags()$severity ==
+        "STOP"
+      )
+    ) {
+      
+      return(
+        "DO NOT PROCEED / REVIEW"
+      )
+    }
+    
+    
+    if (
+      any(
+        flags()$severity ==
+        "ESCALATE"
+      )
+    ) {
+      
+      return(
+        "ESCALATION REQUIRED"
+      )
+    }
+    
+    
+    score <- residual_score()
     
     
     case_when(
       
-      score <
-        20 ~
+      score < 20 ~
         "LOW",
       
-      score <
-        40 ~
+      score < 40 ~
         "MODERATE",
       
-      score <
-        60 ~
+      score < 60 ~
         "HIGH",
       
-      score <
-        75 ~
+      score < 75 ~
         "VERY HIGH",
       
       TRUE ~
-        "STOP / ESCALATE"
-      
+        "ESCALATION REQUIRED"
     )
-    
   })
   
   
   # ==========================================================
-  # DESCRIPTION HELPERS
+  # DESCRIPTION FUNCTIONS
   # ==========================================================
   
-  risk_description <- function(
-    score
-  ) {
+  risk_description <- function(score) {
     
     case_when(
       
-      score <
-        20 ~
+      score < 20 ~
         "Low",
       
-      score <
-        40 ~
+      score < 40 ~
         "Moderate",
       
-      score <
-        60 ~
+      score < 60 ~
         "High",
       
-      score <
-        75 ~
+      score < 75 ~
         "Very high",
       
       TRUE ~
         "Critical"
-      
     )
-    
   }
   
   
-  control_description <- function(
-    score
-  ) {
+  control_description <- function(score) {
     
     case_when(
       
-      score >=
-        80 ~
+      score >= 80 ~
         "Strong",
       
-      score >=
-        60 ~
+      score >= 60 ~
         "Good",
       
-      score >=
-        40 ~
+      score >= 40 ~
         "Moderate",
       
-      score >=
-        20 ~
+      score >= 20 ~
         "Weak",
       
       TRUE ~
         "Very weak"
-      
     )
-    
   }
   
   
@@ -3550,121 +2670,133 @@ server <- function(
   output$project_heading <- renderUI({
     
     if (
-      
-      is.null(
-        input$project_name
-      ) ||
-      
-      input$project_name ==
-      ""
-      
+      is.null(input$project_name) ||
+      input$project_name == ""
     ) {
       
-      return(
-        NULL
-      )
-      
+      return(NULL)
     }
     
     
     tagList(
       
       h4(
-        
         paste(
-          
           "Use case:",
-          
           input$project_name
-          
         )
-        
       ),
       
       p(
-        
         paste(
-          
-          "Lifecycle stage:",
-          
+          "Lifecycle:",
           input$lifecycle
-          
         )
-        
       )
-      
     )
-    
   })
   
   
   # ==========================================================
-  # SCORE OUTPUTS
+  # SCORE TEXT
   # ==========================================================
   
   output$inherent_label <- renderText({
     
+    if (
+      completed_questions() == 0
+    ) {
+      
+      return("Not assessed")
+    }
+    
+    
     risk_description(
       inherent_score()
     )
-    
   })
   
   
   output$control_label <- renderText({
     
+    if (
+      completed_questions() == 0
+    ) {
+      
+      return("Not assessed")
+    }
+    
+    
     control_description(
       control_score()
     )
-    
   })
   
   
   output$inherent_score_text <- renderText({
     
-    paste0(
+    if (
+      completed_questions() == 0
+    ) {
       
+      return("-")
+    }
+    
+    
+    paste0(
       round(
         inherent_score(),
         1
       ),
-      
       "%"
-      
     )
-    
   })
   
   
   output$control_score_text <- renderText({
     
-    paste0(
+    if (
+      completed_questions() == 0
+    ) {
       
+      return("-")
+    }
+    
+    
+    paste0(
       round(
         control_score(),
         1
       ),
-      
       "%"
-      
     )
-    
   })
   
   
   output$residual_score_text <- renderText({
     
-    paste0(
+    if (
+      !assessment_complete()
+    ) {
       
+      return(
+        paste0(
+          completed_questions(),
+          "/",
+          TOTAL_ASSESSMENT_QUESTIONS,
+          " completed"
+        )
+      )
+    }
+    
+    
+    paste0(
       round(
         residual_score(),
         1
       ),
-      
       "%"
-      
     )
-    
   })
   
   
@@ -3674,55 +2806,50 @@ server <- function(
   
   output$risk_badge <- renderUI({
     
-    label <-
-      risk_label()
+    label <- risk_label()
     
     
-    badge_class <-
-      case_when(
-        
-        label ==
-          "LOW" ~
-          "success",
-        
-        label ==
-          "MODERATE" ~
-          "warning",
-        
-        label ==
-          "HIGH" ~
-          "warning",
-        
-        label ==
-          "VERY HIGH" ~
-          "danger",
-        
-        TRUE ~
-          "danger"
-        
-      )
+    badge_class <- case_when(
+      
+      label ==
+        "INCOMPLETE" ~
+        "secondary",
+      
+      label ==
+        "LOW" ~
+        "success",
+      
+      label ==
+        "MODERATE" ~
+        "warning",
+      
+      label ==
+        "HIGH" ~
+        "warning",
+      
+      label ==
+        "VERY HIGH" ~
+        "danger",
+      
+      TRUE ~
+        "danger"
+    )
     
     
     span(
       
-      class =
-        paste0(
-          "badge bg-",
-          badge_class
-        ),
+      class = paste0(
+        "badge bg-",
+        badge_class
+      ),
       
       style = "
-        font-size:22px;
+        font-size:20px;
         padding:14px;
       ",
       
-      paste(
-        "AI Risk:",
-        label
-      )
-      
+      label
     )
-    
   })
   
   
@@ -3760,7 +2887,6 @@ server <- function(
         
         .groups =
           "drop"
-        
       ) %>%
       
       arrange(
@@ -3768,7 +2894,6 @@ server <- function(
           risk_score
         )
       )
-    
   })
   
   
@@ -3778,21 +2903,15 @@ server <- function(
   
   output$risk_plot <- renderPlot({
     
-    dat <-
-      domain_scores()
+    dat <- domain_scores()
     
     
     validate(
       
       need(
-        
-        nrow(dat) >
-          0,
-        
-        "Complete some assessment questions to see the risk profile."
-        
+        nrow(dat) > 0,
+        "Complete assessment questions to see the risk profile."
       )
-      
     )
     
     
@@ -3802,15 +2921,13 @@ server <- function(
       
       aes(
         
-        x =
-          reorder(
-            domain,
-            risk_score
-          ),
+        x = reorder(
+          domain,
+          risk_score
+        ),
         
         y =
           risk_score
-        
       )
       
     ) +
@@ -3820,23 +2937,15 @@ server <- function(
       geom_text(
         
         aes(
-          
-          label =
-            paste0(
-              
-              round(
-                risk_score
-              ),
-              
-              "%"
-              
-            )
-          
+          label = paste0(
+            round(
+              risk_score
+            ),
+            "%"
+          )
         ),
         
-        hjust =
-          -0.1
-        
+        hjust = -0.1
       ) +
       
       coord_flip() +
@@ -3848,92 +2957,111 @@ server <- function(
           110
         ),
         
-        breaks =
-          seq(
-            0,
-            100,
-            20
-          )
-        
+        breaks = seq(
+          0,
+          100,
+          20
+        )
       ) +
       
       labs(
         
-        x =
-          NULL,
+        x = NULL,
         
         y =
           "Risk / control concern (%)",
         
         title =
-          "AI RiskCheck risk profile"
-        
+          "Risk profile by assessment area"
       ) +
       
       theme_minimal(
         base_size = 13
       )
-    
   })
   
   
   # ==========================================================
-  # RED FLAGS OUTPUT
+  # FLAGS
   # ==========================================================
   
-  output$red_flag_output <- renderUI({
+  output$flag_output <- renderUI({
     
-    flags <-
-      red_flags()
+    if (
+      !assessment_complete()
+    ) {
+      
+      return(
+        
+        div(
+          class = "alert alert-secondary",
+          paste(
+            "Complete all 25 questions before the final",
+            "escalation assessment is determined."
+          )
+        )
+      )
+    }
+    
+    
+    flag_data <- flags()
     
     
     if (
-      
-      length(
-        flags
-      ) ==
-      0
-      
+      nrow(flag_data) == 0
     ) {
       
-      div(
+      return(
         
-        class =
-          "alert alert-success",
-        
-        strong(
-          "No mandatory escalation conditions identified."
-        )
-        
-      )
-      
-    } else {
-      
-      div(
-        
-        class =
-          "alert alert-danger",
-        
-        h5(
-          "AI RiskCheck identified the following areas requiring escalation:"
-        ),
-        
-        tags$ul(
-          
-          lapply(
-            
-            flags,
-            
-            tags$li
-            
+        div(
+          class = "alert alert-success",
+          strong(
+            "No automatic escalation or stop conditions were identified."
           )
-          
         )
-        
       )
-      
     }
     
+    
+    tagList(
+      
+      lapply(
+        
+        seq_len(
+          nrow(flag_data)
+        ),
+        
+        function(i) {
+          
+          alert_class <- if (
+            flag_data$severity[i] ==
+            "STOP"
+          ) {
+            
+            "alert alert-danger"
+            
+          } else {
+            
+            "alert alert-warning"
+          }
+          
+          
+          div(
+            
+            class = alert_class,
+            
+            strong(
+              paste0(
+                flag_data$severity[i],
+                ": "
+              )
+            ),
+            
+            flag_data$issue[i]
+          )
+        }
+      )
+    )
   })
   
   
@@ -3943,8 +3071,7 @@ server <- function(
   
   output$key_risks <- renderUI({
     
-    dat <-
-      scored_answers() %>%
+    dat <- scored_answers() %>%
       
       filter(
         
@@ -3952,9 +3079,7 @@ server <- function(
           adjusted_score
         ),
         
-        adjusted_score >=
-          3
-        
+        adjusted_score >= 3
       ) %>%
       
       arrange(
@@ -3966,7 +3091,6 @@ server <- function(
         desc(
           weight
         )
-        
       ) %>%
       
       slice_head(
@@ -3975,23 +3099,16 @@ server <- function(
     
     
     if (
-      nrow(dat) ==
-      0
+      nrow(dat) == 0
     ) {
       
       return(
         
         div(
-          
-          class =
-            "alert alert-success",
-          
-          "No major risks were identified from the completed assessment."
-          
+          class = "alert alert-success",
+          "No high-concern responses have currently been identified."
         )
-        
       )
-      
     }
     
     
@@ -4007,8 +3124,7 @@ server <- function(
           
           div(
             
-            class =
-              "alert alert-warning",
+            class = "alert alert-warning",
             
             h5(
               dat$domain[i]
@@ -4019,23 +3135,200 @@ server <- function(
             ),
             
             p(
-              
-              strong(
-                "Recommended action: "
-              ),
-              
-              dat$recommended_action[i]
-              
-            )
+              strong("Your response: "),
+              dat$response_text[i]
+            ),
             
+            p(
+              strong("Recommended action: "),
+              dat$recommended_action[i]
+            )
           )
-          
         }
-        
       )
+    )
+  })
+  
+  
+  # ==========================================================
+  # RECOMMENDATIONS
+  # ==========================================================
+  
+  output$recommendations <- renderUI({
+    
+    dat <- scored_answers() %>%
       
+      filter(
+        
+        !is.na(
+          adjusted_score
+        ),
+        
+        adjusted_score >= 2
+      ) %>%
+      
+      arrange(
+        
+        desc(
+          adjusted_score
+        ),
+        
+        desc(
+          weight
+        )
+      ) %>%
+      
+      distinct(
+        recommended_action
+      )
+    
+    
+    if (
+      nrow(dat) == 0
+    ) {
+      
+      return(
+        
+        div(
+          class = "alert alert-success",
+          paste(
+            "No major additional assurance activities have currently",
+            "been identified. Continue to apply proportionate analytical QA."
+          )
+        )
+      )
+    }
+    
+    
+    tags$ul(
+      
+      lapply(
+        dat$recommended_action,
+        tags$li
+      )
+    )
+  })
+  
+  
+  # ==========================================================
+  # LIMITATIONS TO COMMUNICATE
+  # ==========================================================
+  
+  output$limitations_output <- renderUI({
+    
+    dat <- scored_answers() %>%
+      
+      filter(
+        
+        !is.na(
+          adjusted_score
+        ),
+        
+        adjusted_score >= 2
+      )
+    
+    
+    messages <- character(0)
+    
+    
+    if (
+      "Quality, testing & reliability" %in%
+      dat$domain
+    ) {
+      
+      messages <- c(
+        
+        messages,
+        
+        paste(
+          "AI-generated outputs may contain errors or unsupported content.",
+          "Important outputs should not be treated as authoritative without",
+          "appropriate verification."
+        )
+      )
+    }
+    
+    
+    if (
+      "Fairness, transparency & stakeholders" %in%
+      dat$domain
+    ) {
+      
+      messages <- c(
+        
+        messages,
+        
+        paste(
+          "Users should be informed about material limitations, uncertainty",
+          "and relevant fairness or differential-impact concerns."
+        )
+      )
+    }
+    
+    
+    if (
+      "Data, privacy & legal" %in%
+      dat$domain
+    ) {
+      
+      messages <- c(
+        
+        messages,
+        
+        paste(
+          "Relevant data-quality, privacy, licensing or information-handling",
+          "limitations should be documented and communicated."
+        )
+      )
+    }
+    
+    
+    if (
+      "Security, platform & supplier" %in%
+      dat$domain
+    ) {
+      
+      messages <- c(
+        
+        messages,
+        
+        paste(
+          "Users should understand relevant platform, supplier or",
+          "AI-specific security limitations."
+        )
+      )
+    }
+    
+    
+    messages <- unique(
+      messages
     )
     
+    
+    if (
+      length(messages) == 0
+    ) {
+      
+      return(
+        
+        p(
+          paste(
+            "No additional user-facing limitations have been generated",
+            "from the current responses. Relevant known limitations should",
+            "still be documented."
+          )
+        )
+      )
+    }
+    
+    
+    tags$ul(
+      
+      lapply(
+        messages,
+        tags$li
+      )
+    )
   })
   
   
@@ -4045,8 +3338,28 @@ server <- function(
   
   output$decision_summary <- renderUI({
     
-    label <-
-      risk_label()
+    label <- risk_label()
+    
+    
+    if (
+      label ==
+      "INCOMPLETE"
+    ) {
+      
+      return(
+        
+        tagList(
+          
+          h4(
+            "Assessment incomplete"
+          ),
+          
+          p(
+            "Complete all 25 questions before relying on the overall rating."
+          )
+        )
+      )
+    }
     
     
     if (
@@ -4059,18 +3372,17 @@ server <- function(
         tagList(
           
           h4(
-            "Proceed"
+            "Proceed with standard assurance"
           ),
           
           p(
-            "The use case can proceed with standard analytical assurance, ",
-            "subject to normal departmental requirements."
+            paste(
+              "The use case currently appears suitable to proceed with",
+              "proportionate analytical QA and normal departmental controls."
+            )
           )
-          
         )
-        
       )
-      
     }
     
     
@@ -4088,25 +3400,22 @@ server <- function(
           ),
           
           p(
-            "The use case may proceed once the identified controls and ",
-            "assurance activities have been addressed."
+            paste(
+              "Address the identified areas requiring attention",
+              "and document the assurance undertaken."
+            )
           )
-          
         )
-        
       )
-      
     }
     
     
     if (
-      
       label %in%
       c(
         "HIGH",
         "VERY HIGH"
       )
-      
     ) {
       
       return(
@@ -4114,82 +3423,72 @@ server <- function(
         tagList(
           
           h4(
-            "Enhanced review required"
+            "Enhanced assurance required"
           ),
           
           p(
-            "Additional assurance and specialist review should be completed ",
-            "before operational deployment."
+            paste(
+              "Additional testing, review and appropriate specialist",
+              "assurance should be completed before operational use."
+            )
           )
-          
         )
-        
       )
+    }
+    
+    
+    if (
+      label ==
+      "ESCALATION REQUIRED"
+    ) {
       
+      return(
+        
+        tagList(
+          
+          h4(
+            "Escalation required"
+          ),
+          
+          p(
+            paste(
+              "One or more material concerns should be reviewed with",
+              "the appropriate specialist or assurance team before proceeding."
+            )
+          )
+        )
+      )
     }
     
     
     tagList(
       
       h4(
-        "Do not proceed without escalation"
+        "Do not proceed without review"
       ),
       
       p(
-        "One or more significant risks require formal review before the use case proceeds."
+        paste(
+          "AI RiskCheck has identified a stop condition.",
+          "Resolve or formally review the issue before proceeding."
+        )
       )
-      
     )
-    
   })
   
   
   # ==========================================================
-  # RISK TABLE
+  # DETAILED TABLE
   # ==========================================================
   
   output$risk_table <- renderDT({
     
-    dat <-
-      scored_answers() %>%
+    dat <- scored_answers() %>%
       
       filter(
         !is.na(
-          adjusted_score
+          response
         )
-      ) %>%
-      
-      mutate(
-        
-        Concern =
-          case_when(
-            
-            adjusted_score >=
-              4 ~
-              "Very high",
-            
-            adjusted_score >=
-              3 ~
-              "High",
-            
-            adjusted_score >=
-              2 ~
-              "Moderate",
-            
-            adjusted_score >=
-              1 ~
-              "Low",
-            
-            TRUE ~
-              "No concern"
-            
-          )
-        
-      ) %>%
-      
-      filter(
-        adjusted_score >=
-          2
       ) %>%
       
       arrange(
@@ -4201,7 +3500,6 @@ server <- function(
         desc(
           weight
         )
-        
       ) %>%
       
       select(
@@ -4212,14 +3510,17 @@ server <- function(
         Question =
           question,
         
-        Concern,
+        Response =
+          response_text,
         
-        Guidance =
+        Concern =
+          concern,
+        
+        Reference =
           source,
         
         `Recommended action` =
           recommended_action
-        
       )
     
     
@@ -4227,101 +3528,14 @@ server <- function(
       
       dat,
       
-      rownames =
-        FALSE,
+      rownames = FALSE,
       
-      options =
-        list(
-          
-          pageLength =
-            10,
-          
-          scrollX =
-            TRUE,
-          
-          autoWidth =
-            TRUE
-          
-        )
-      
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        autoWidth = TRUE
+      )
     )
-    
-  })
-  
-  
-  # ==========================================================
-  # RECOMMENDATIONS
-  # ==========================================================
-  
-  output$recommendations <- renderUI({
-    
-    dat <-
-      scored_answers() %>%
-      
-      filter(
-        
-        !is.na(
-          adjusted_score
-        ),
-        
-        adjusted_score >=
-          2
-        
-      ) %>%
-      
-      arrange(
-        
-        desc(
-          adjusted_score
-        ),
-        
-        desc(
-          weight
-        )
-        
-      ) %>%
-      
-      distinct(
-        recommended_action
-      )
-    
-    
-    if (
-      nrow(dat) ==
-      0
-    ) {
-      
-      return(
-        
-        div(
-          
-          class =
-            "alert alert-success",
-          
-          paste(
-            "No major additional assurance activities were identified.",
-            "Continue to apply proportionate analytical QA."
-          )
-          
-        )
-        
-      )
-      
-    }
-    
-    
-    tags$ul(
-      
-      lapply(
-        
-        dat$recommended_action,
-        
-        tags$li
-        
-      )
-      
-    )
-    
   })
   
   
@@ -4331,138 +3545,171 @@ server <- function(
   
   output$system_profile <- renderUI({
     
-    profile_rows <-
-      list(
+    get_value <- function(x) {
+      
+      if (
+        is.null(x) ||
+        length(x) == 0 ||
+        identical(x, "")
+      ) {
         
-        c(
-          "AI type",
-          input$ai_type
-        ),
-        
-        c(
-          "Environment",
-          input$environment
-        ),
-        
-        c(
-          "Provider",
-          input$provider
-        ),
-        
-        c(
-          "Model",
-          input$model_name
-        ),
-        
-        c(
-          "Model version",
-          input$model_version
-        ),
-        
-        c(
-          "Hosting",
-          input$hosting
-        ),
-        
-        c(
-          "Access method",
-          input$access_method
-        ),
-        
-        c(
-          "Lifecycle",
+        return(
+          "Not provided"
+        )
+      }
+      
+      
+      paste(
+        x,
+        collapse = "; "
+      )
+    }
+    
+    
+    profile_rows <- list(
+      
+      c(
+        "Project / use case",
+        get_value(
+          input$project_name
+        )
+      ),
+      
+      c(
+        "Description",
+        get_value(
+          input$project_description
+        )
+      ),
+      
+      c(
+        "How AI is used",
+        get_value(
+          input$ai_uses
+        )
+      ),
+      
+      c(
+        "Lifecycle",
+        get_value(
           input$lifecycle
-        ),
-        
-        c(
-          "Audience",
+        )
+      ),
+      
+      c(
+        "Audience",
+        get_value(
           input$audience
         )
-        
+      ),
+      
+      c(
+        "AI type",
+        get_value(
+          input$ai_type
+        )
+      ),
+      
+      c(
+        "Environment",
+        get_value(
+          input$environment
+        )
+      ),
+      
+      c(
+        "Provider",
+        get_value(
+          input$provider
+        )
+      ),
+      
+      c(
+        "Model",
+        get_value(
+          input$model_name
+        )
+      ),
+      
+      c(
+        "Model version",
+        get_value(
+          input$model_version
+        )
+      ),
+      
+      c(
+        "Hosting",
+        get_value(
+          input$hosting
+        )
+      ),
+      
+      c(
+        "Access method",
+        get_value(
+          input$access_method
+        )
       )
+    )
     
     
     if (
-      
+      !is.null(input$ai_type) &&
       input$ai_type %in%
       c(
-        
         "Generative AI / LLM",
         "LLM with RAG",
         "AI agent / tool-using LLM"
-        
       )
-      
     ) {
       
-      profile_rows <-
-        append(
+      profile_rows <- append(
+        
+        profile_rows,
+        
+        list(
           
-          profile_rows,
-          
-          list(
-            
-            c(
-              
-              "Estimated monthly tokens",
-              
-              format(
-                
-                input$monthly_tokens,
-                
-                big.mark = ","
-                
-              )
-              
-            ),
-            
-            c(
-              
-              "Estimated monthly cost",
-              
-              paste0(
-                
-                "£",
-                
-                format(
-                  
-                  input$monthly_cost,
-                  
-                  big.mark = ","
-                  
-                )
-                
-              )
-              
-            ),
-            
-            c(
-              
-              "Usage monitoring",
-              
-              input$token_monitoring
-              
-            ),
-            
-            c(
-              
-              "Usage / spending limits",
-              
-              input$cost_limits
-              
+          c(
+            "Estimated monthly tokens",
+            format(
+              input$monthly_tokens,
+              big.mark = ","
             )
-            
-          )
+          ),
           
+          c(
+            "Estimated monthly cost",
+            paste0(
+              "£",
+              format(
+                input$monthly_cost,
+                big.mark = ","
+              )
+            )
+          ),
+          
+          c(
+            "Usage monitoring",
+            get_value(
+              input$usage_monitoring
+            )
+          ),
+          
+          c(
+            "Usage / spending limits",
+            get_value(
+              input$usage_limits
+            )
+          )
         )
-      
+      )
     }
     
     
     tags$table(
       
-      class =
-        "table table-striped",
+      class = "table table-striped",
       
       tags$tbody(
         
@@ -4481,55 +3728,41 @@ server <- function(
               tags$td(
                 row[2]
               )
-              
             )
-            
           }
-          
         )
-        
       )
-      
     )
-    
   })
   
   
   # ==========================================================
-  # GUIDANCE CARDS
+  # REFERENCES
   # ==========================================================
   
-  output$guidance_cards <- renderUI({
+  output$reference_cards <- renderUI({
     
     tagList(
       
       map(
         
         seq_len(
-          nrow(
-            guidance
-          )
+          nrow(references)
         ),
         
         function(i) {
           
-          g <-
-            guidance[
-              i,
-            ]
+          ref <- references[i, ]
           
           
           card(
             
-            class =
-              "mb-3",
+            class = "mb-3",
             
             card_header(
-              
               h4(
-                g$source
+                ref$source
               )
-              
             ),
             
             card_body(
@@ -4537,19 +3770,23 @@ server <- function(
               p(
                 
                 strong(
-                  g$organisation
-                )
+                  ref$organisation
+                ),
                 
+                paste0(
+                  " — ",
+                  ref$date
+                )
               ),
               
               p(
-                g$purpose
+                ref$purpose
               ),
               
               tags$a(
                 
                 href =
-                  g$url,
+                  ref$url,
                 
                 target =
                   "_blank",
@@ -4557,192 +3794,148 @@ server <- function(
                 class =
                   "btn btn-outline-primary",
                 
-                "Open guidance"
-                
+                "Open reference"
               )
-              
             )
-            
           )
-          
         }
-        
       )
-      
     )
-    
   })
   
   
   # ==========================================================
-  # DOWNLOAD
+  # DOWNLOAD CSV
   # ==========================================================
   
-  output$download_assessment <-
-    downloadHandler(
+  output$download_assessment <- downloadHandler(
+    
+    filename = function() {
+      
+      project_name <- input$project_name
       
       
-      filename = function() {
+      if (
+        is.null(project_name) ||
+        project_name == ""
+      ) {
         
         project_name <-
-          input$project_name
-        
-        
-        if (
-          
-          is.null(
-            project_name
-          ) ||
-          
-          project_name ==
-          ""
-          
-        ) {
-          
-          project_name <-
-            "AI_RiskCheck"
-          
-        }
-        
-        
-        safe_name <-
-          gsub(
-            
-            "[^A-Za-z0-9]+",
-            
-            "_",
-            
-            project_name
-            
-          )
-        
-        
-        paste0(
-          
-          safe_name,
-          
-          "_AI_RiskCheck_Assessment_",
-          
-          Sys.Date(),
-          
-          ".csv"
-          
-        )
-        
-      },
-      
-      
-      content = function(file) {
-        
-        results <-
-          scored_answers() %>%
-          
-          mutate(
-            
-            project_name =
-              input$project_name,
-            
-            project_description =
-              input$project_description,
-            
-            assessment_date =
-              as.character(
-                Sys.Date()
-              ),
-            
-            application_name =
-              APP_NAME,
-            
-            application_version =
-              APP_VERSION,
-            
-            app_last_updated =
-              APP_LAST_UPDATED,
-            
-            guidance_last_reviewed =
-              GUIDANCE_LAST_REVIEWED,
-            
-            lifecycle =
-              input$lifecycle,
-            
-            audience =
-              input$audience,
-            
-            ai_type =
-              input$ai_type,
-            
-            environment =
-              input$environment,
-            
-            provider =
-              input$provider,
-            
-            model_name =
-              input$model_name,
-            
-            model_version =
-              input$model_version,
-            
-            hosting =
-              input$hosting,
-            
-            access_method =
-              input$access_method,
-            
-            inherent_risk =
-              round(
-                inherent_score(),
-                1
-              ),
-            
-            control_strength =
-              round(
-                control_score(),
-                1
-              ),
-            
-            residual_risk =
-              round(
-                residual_score(),
-                1
-              ),
-            
-            overall_rating =
-              risk_label(),
-            
-            red_flags =
-              paste(
-                
-                red_flags(),
-                
-                collapse =
-                  " | "
-                
-              )
-            
-          )
-        
-        
-        write.csv(
-          
-          results,
-          
-          file,
-          
-          row.names =
-            FALSE
-          
-        )
-        
+          "AI_RiskCheck"
       }
       
-    )
+      
+      safe_name <- gsub(
+        
+        "[^A-Za-z0-9]+",
+        
+        "_",
+        
+        project_name
+      )
+      
+      
+      paste0(
+        safe_name,
+        "_AI_RiskCheck_Assessment_",
+        Sys.Date(),
+        ".csv"
+      )
+    },
+    
+    
+    content = function(file) {
+      
+      results <- scored_answers() %>%
+        
+        mutate(
+          
+          project_name =
+            input$project_name,
+          
+          project_description =
+            input$project_description,
+          
+          ai_uses =
+            paste(
+              input$ai_uses,
+              collapse = "; "
+            ),
+          
+          assessment_date =
+            as.character(
+              Sys.Date()
+            ),
+          
+          app_version =
+            APP_VERSION,
+          
+          lifecycle =
+            input$lifecycle,
+          
+          audience =
+            input$audience,
+          
+          ai_type =
+            input$ai_type,
+          
+          environment =
+            input$environment,
+          
+          provider =
+            input$provider,
+          
+          model =
+            input$model_name,
+          
+          model_version =
+            input$model_version,
+          
+          inherent_risk =
+            round(
+              inherent_score(),
+              1
+            ),
+          
+          control_strength =
+            round(
+              control_score(),
+              1
+            ),
+          
+          residual_risk =
+            round(
+              residual_score(),
+              1
+            ),
+          
+          overall_rating =
+            risk_label(),
+          
+          assessment_complete =
+            assessment_complete(),
+          
+          escalation_flags =
+            paste(
+              flags()$issue,
+              collapse = " | "
+            )
+        )
+      
+      
+      write.csv(
+        results,
+        file,
+        row.names = FALSE
+      )
+    }
+  )
   
 }
 
 
 # ============================================================
-# 8. RUN APPLICATION
+# 8. RUN APP
 # ============================================================
 
 shinyApp(
