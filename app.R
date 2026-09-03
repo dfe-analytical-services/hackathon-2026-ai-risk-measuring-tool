@@ -1,4 +1,4 @@
-
+# ============================================================
 # AI RiskCheck
 # Responsible AI Risk Self-Assessment Tool
 # ============================================================
@@ -11,10 +11,8 @@ library(tibble)
 library(ggplot2)
 library(DT)
 library(scales)
-
-library(rmarkdown)
-
-library(knitr)
+library(httr2)
+library(jsonlite)
 
 # ============================================================
 # 1. ASSESSMENT MATRIX
@@ -27,21 +25,21 @@ questions <- tribble(
   # PURPOSE ---------------------------------------------------
 
   "purpose_1",
-  "Purpose & appropriateness",
+  "Purpose and appropriateness",
   "Is the problem or use case clearly defined?",
   "AI should address a clear analytical problem or user need.",
   "control",
   1,
 
   "purpose_2",
-  "Purpose & appropriateness",
+  "Purpose and appropriateness",
   "Have non-AI alternatives been considered?",
   "Consider whether conventional analytical or automation methods could meet the same need.",
   "control",
   1,
 
   "purpose_3",
-  "Purpose & appropriateness",
+  "Purpose and appropriateness",
   "Does using AI provide a clear and measurable benefit?",
   "Benefits could include improved efficiency, quality, accessibility or consistency.",
   "control",
@@ -75,35 +73,35 @@ questions <- tribble(
   # DATA ------------------------------------------------------
 
   "data_1",
-  "Data & privacy",
+  "Data and privacy",
   "What is the highest sensitivity of data processed by the AI?",
   "Consider public, internal, personal, sensitive or confidential information.",
   "risk",
   3,
 
   "data_2",
-  "Data & privacy",
+  "Data and privacy",
   "Is only the minimum necessary data supplied to the AI?",
   "Data should be minimised where possible.",
   "control",
   2,
 
   "data_3",
-  "Data & privacy",
+  "Data and privacy",
   "Are data retention arrangements understood?",
   "Consider whether prompts, files or outputs are retained.",
   "control",
   2,
 
   "data_4",
-  "Data & privacy",
+  "Data and privacy",
   "Is it understood whether inputs can be used to train the model?",
   "Users should understand how information supplied to the AI may subsequently be used.",
   "control",
   2,
 
   "data_5",
-  "Data & privacy",
+  "Data and privacy",
   "Has privacy or data protection advice been obtained where required?",
   "This is particularly important where personal data is involved.",
   "control",
@@ -113,21 +111,21 @@ questions <- tribble(
   # IMPACT ----------------------------------------------------
 
   "impact_1",
-  "Impact & consequences",
+  "Impact and consequences",
   "How serious would the consequences be if the AI output were materially wrong?",
   "Consider impacts on analysis, policy, funding, services or individuals.",
   "risk",
   4,
 
   "impact_2",
-  "Impact & consequences",
+  "Impact and consequences",
   "How widely could an incorrect AI output affect users or stakeholders?",
   "Consider whether impact is limited to one analyst or could extend to the public or identifiable individuals.",
   "risk",
   3,
 
   "impact_3",
-  "Impact & consequences",
+  "Impact and consequences",
   "Could the AI influence policy, funding or operational decisions?",
   "Consider both direct and indirect influence.",
   "risk",
@@ -137,42 +135,42 @@ questions <- tribble(
   # QUALITY ---------------------------------------------------
 
   "quality_1",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Are AI-generated outputs independently checked?",
   "Important AI-generated analytical outputs should be independently validated.",
   "control",
   3,
 
   "quality_2",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Are numerical claims checked against authoritative source data?",
   "This is particularly important for analytical and statistical outputs.",
   "control",
   3,
 
   "quality_3",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Is AI-generated code reviewed before use?",
   "Generated code should be tested and understood by a competent analyst.",
   "control",
   2,
 
   "quality_4",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Has the system been tested against known examples?",
   "A representative test dataset can help identify systematic errors.",
   "control",
   2,
 
   "quality_5",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Are accuracy or performance measures recorded?",
   "Performance should be measurable where possible.",
   "control",
   2,
 
   "quality_6",
-  "Accuracy & analytical quality",
+  "Accuracy and analytical quality",
   "Are model, prompt or configuration changes retested?",
   "Changes should not be introduced without checking their impact.",
   "control",
@@ -182,21 +180,21 @@ questions <- tribble(
   # FAIRNESS --------------------------------------------------
 
   "fairness_1",
-  "Bias, fairness & ethics",
+  "Bias, fairness and ethics",
   "Could AI outputs affect people or groups differently?",
   "Consider demographic groups and protected characteristics.",
   "risk",
   3,
 
   "fairness_2",
-  "Bias, fairness & ethics",
+  "Bias, fairness and ethics",
   "Has potential bias or differential impact been assessed?",
   "Consider whether model performance differs across groups.",
   "control",
   2,
 
   "fairness_3",
-  "Bias, fairness & ethics",
+  "Bias, fairness and ethics",
   "Could false positives or false negatives disproportionately affect a group?",
   "Consider who could be harmed by incorrect AI outputs.",
   "risk",
@@ -230,35 +228,35 @@ questions <- tribble(
   # SECURITY --------------------------------------------------
 
   "security_1",
-  "Security & robustness",
+  "Security and robustness",
   "Is the AI service approved for the information being processed?",
   "Consider departmental security and information assurance requirements.",
   "control",
   4,
 
   "security_2",
-  "Security & robustness",
+  "Security and robustness",
   "Are appropriate access controls in place?",
   "Access should be limited to authorised users.",
   "control",
   2,
 
   "security_3",
-  "Security & robustness",
+  "Security and robustness",
   "Could users or external documents manipulate the AI system?",
   "For LLMs this can include prompt injection or malicious retrieved content.",
   "risk",
   3,
 
   "security_4",
-  "Security & robustness",
+  "Security and robustness",
   "Can the AI access other systems or tools?",
   "Tool-enabled AI can create additional operational and security risks.",
   "risk",
   3,
 
   "security_5",
-  "Security & robustness",
+  "Security and robustness",
   "Are logs or audit records retained?",
   "Logs can support monitoring, investigation and assurance.",
   "control",
@@ -268,35 +266,35 @@ questions <- tribble(
   # TRANSPARENCY ----------------------------------------------
 
   "transparency_1",
-  "Transparency & explainability",
+  "Transparency and explainability",
   "Is the use of AI documented?",
   "It should be clear where AI contributes materially to the analytical process.",
   "control",
   2,
 
   "transparency_2",
-  "Transparency & explainability",
+  "Transparency and explainability",
   "Are users informed where AI materially contributes to outputs?",
   "Disclosure should be proportionate to the role AI plays.",
   "control",
   2,
 
   "transparency_3",
-  "Transparency & explainability",
+  "Transparency and explainability",
   "Are limitations and uncertainties communicated?",
   "Users should understand important limitations of AI-supported outputs.",
   "control",
   2,
 
   "transparency_4",
-  "Transparency & explainability",
+  "Transparency and explainability",
   "Can important conclusions be traced back to evidence or source information?",
   "Traceability supports analytical assurance and reproducibility.",
   "control",
   3,
 
   "transparency_5",
-  "Transparency & explainability",
+  "Transparency and explainability",
   "Can affected users challenge an AI-supported outcome where appropriate?",
   "Higher-impact uses may require routes for contestability or redress.",
   "control",
@@ -306,42 +304,42 @@ questions <- tribble(
   # GOVERNANCE ------------------------------------------------
 
   "governance_1",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Is there a named project owner?",
   "Ownership should remain clear throughout the AI lifecycle.",
   "control",
   2,
 
   "governance_2",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Is there a named analytical owner?",
   "Someone should remain accountable for analytical quality.",
   "control",
   2,
 
   "governance_3",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Is AI performance monitored after implementation?",
   "Models and use patterns may change over time.",
   "control",
   3,
 
   "governance_4",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Is there an escalation process for incidents or unexpected behaviour?",
   "Teams should know what to do when AI creates an unexpected risk.",
   "control",
   3,
 
   "governance_5",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Is there a process for stopping or decommissioning the AI system?",
   "Operational AI systems should have a clear exit process.",
   "control",
   2,
 
   "governance_6",
-  "Governance & lifecycle",
+  "Governance and lifecycle",
   "Are model, prompt or data-source changes controlled?",
   "Material changes should be documented and reassessed.",
   "control",
@@ -351,21 +349,21 @@ questions <- tribble(
   # SKILLS ----------------------------------------------------
 
   "skills_1",
-  "Skills & capability",
+  "Skills and capability",
   "Does the team have sufficient AI expertise?",
   "Teams should understand the technology being used and its limitations.",
   "control",
   2,
 
   "skills_2",
-  "Skills & capability",
+  "Skills and capability",
   "Does the team have sufficient analytical expertise?",
   "AI should support rather than replace appropriate analytical expertise.",
   "control",
   2,
 
   "skills_3",
-  "Skills & capability",
+  "Skills and capability",
   "Have relevant specialist teams been consulted where required?",
   "This could include analytical QA, security, information assurance, legal or data protection.",
   "control",
@@ -575,142 +573,64 @@ ui <- page_navbar(
     "Results",
 
     div(
+      accordion(
 
-      class = "container-fluid mt-4",
+        accordion_panel(
+          "Overall Risk Summary",
 
-      fluidRow(
-
-        column(
-
-          4,
-
-          card(
-
-            card_header("AI RiskCheck verdict"),
-
-            uiOutput("risk_badge"),
-
-            h3(textOutput("residual_score_text")),
-
-            p("Residual risk")
-
+          fluidRow(
+            column(4, uiOutput("risk_badge")),
+            column(4, h2(textOutput("residual_score_text"))),
+            column(4, h2(textOutput("control_label")))
           )
-
         ),
 
-        column(
-
-          4,
-
-          card(
-
-            card_header("Inherent risk"),
-
-            h2(textOutput("inherent_label")),
-
-            h5(textOutput("inherent_score_text")),
-
-            p(
-              "Risk associated with the use case before safeguards are considered."
-            )
-
-          )
-
+        accordion_panel(
+          "Risk Profile",
+          plotOutput("risk_plot", height = "450px")
         ),
 
-        column(
+        accordion_panel(
+          "Areas Requiring Attention",
+          DTOutput("risk_table")
+        ),
 
-          4,
+        accordion_panel(
+          "Recommended Assurance",
+          uiOutput("recommendations")
+        ),
 
-          card(
-
-            card_header("Control strength"),
-
-            h2(textOutput("control_label")),
-
-            h5(textOutput("control_score_text")),
-
-            p(
-              "Strength of the safeguards currently in place."
-            )
-
-          )
-
+        accordion_panel(
+          "What Should Happen Next?",
+          uiOutput("overall_action")
         )
-
       ),
-
-      br(),
-
-      fluidRow(
-
-        column(
-
-          7,
-
-          card(
-
-            full_screen = TRUE,
-
-            card_header(
-              "Where AI RiskCheck found risk"
-            ),
-
-            plotOutput(
-              "risk_plot",
-              height = "450px"
-            )
-
-          )
-
-        ),
-
-        column(
-
-          5,
-
-          card(
-
-            card_header(
-              "What should happen next?"
-            ),
-
-            uiOutput(
-              "overall_action"
-            )
-
-          )
-
-        )
-
-      ),
-
-      br(),
 
       card(
-
+        full_screen = TRUE,
         card_header(
-          "Areas requiring attention"
+          "🕵️ AI RiskCheck interpretation"
         ),
 
-        DTOutput(
-          "risk_table"
-        )
-
-      ),
-
-      br(),
-
-      card(
-
-        card_header(
-          "Recommended assurance"
+        p(
+          class = "text-muted",
+          paste(
+            "Generate a plain-English interpretation using the project",
+            "details and completed assessment answers."
+          )
         ),
 
-        uiOutput(
-          "recommendations"
-        )
+        actionButton(
+          "generate_ai_summary",
+          "Generate AI interpretation",
+          class = "btn-primary",
+          icon = icon("wand-magic-sparkles")
+        ),
 
+        br(),
+        br(),
+
+        uiOutput("ai_summary")
       ),
 
       br(),
@@ -719,12 +639,6 @@ ui <- page_navbar(
         "download_assessment",
         "Download AI RiskCheck assessment"
       ),
-      br(),
-      downloadButton(
-"download_report",
-"Download HTML report",
-class = "btn-primary"
-),
 
       br(),
       br()
@@ -734,6 +648,7 @@ class = "btn-primary"
   )
 
 )
+
 
 
 # ============================================================
@@ -1219,6 +1134,75 @@ server <- function(input, output, session) {
 
   }
 
+  # ============================================================
+  # DATABRICKS LLM
+  # ============================================================
+
+  config <- jsonlite::fromJSON("config.json")
+
+  databricks_token <- config$DATABRICKS_TOKEN
+
+  if (
+    is.null(databricks_token) ||
+    !nzchar(databricks_token)
+  ) {
+    stop("DATABRICKS_TOKEN is missing from config.json")
+  }
+
+
+  call_databricks_llm <- function(prompt) {
+
+    response <-
+      httr2::request(
+        paste0(
+          "https://adb-5037484389568426.6.azuredatabricks.net",
+          "/serving-endpoints/chat/completions"
+        )
+      ) %>%
+      httr2::req_headers(
+        Authorization = paste("Bearer", databricks_token)
+      ) %>%
+      httr2::req_body_json(
+        list(
+          model = "databricks-claude-opus-4-7",
+          messages = list(
+            list(
+              role = "system",
+              content = paste(
+                "You are an expert Responsible AI assessor.",
+                "Base your assessment only on the supplied information.",
+                "Do not invent missing facts.",
+                "Clearly identify incomplete assessment information."
+              )
+            ),
+            list(
+              role = "user",
+              content = prompt
+            )
+          ),
+          max_tokens = 2000
+        ),
+        auto_unbox = TRUE
+      ) %>%
+      httr2::req_timeout(60) %>%
+      httr2::req_error(
+        body = function(resp) {
+          paste(
+            "Databricks request failed:",
+            httr2::resp_body_string(resp)
+          )
+        }
+      ) %>%
+      httr2::req_perform()
+
+    result <- httr2::resp_body_json(
+      response,
+      simplifyVector = FALSE
+    )
+
+    result$choices[[1]]$message$content
+  }
+
 
   # ----------------------------------------------------------
   # SUMMARY OUTPUTS
@@ -1347,6 +1331,187 @@ server <- function(input, output, session) {
 
   })
 
+  # ----------------------------------------------------------
+  # LLM Prompt
+  # ----------------------------------------------------------
+
+  llm_prompt <- reactive({
+
+    scores <- domain_scores()
+
+    answer_summary <-
+      scored_answers() %>%
+      filter(!is.na(response)) %>%
+      transmute(
+        answer = paste0(
+          "- Domain: ", domain,
+          "\n  Question: ", question,
+          "\n  Response score: ", response, " out of 4",
+          "\n  Concern score: ", adjusted_score, " out of 4"
+        )
+      ) %>%
+      pull(answer) %>%
+      paste(collapse = "\n")
+
+    flag_text <-
+      if (length(red_flags()) == 0) {
+        "None identified."
+      } else {
+        paste(
+          paste0("- ", red_flags()),
+          collapse = "\n"
+        )
+      }
+
+    paste0(
+      "Assess the following Responsible AI use case.\n\n",
+
+      "PROJECT INFORMATION\n",
+      "Project name: ",
+      input$project_name,
+      "\n",
+
+      "Description: ",
+      input$project_description,
+      "\n",
+
+      "Lifecycle stage: ",
+      input$lifecycle,
+      "\n",
+
+      "Type of AI: ",
+      input$ai_type,
+      "\n",
+
+      "Audience or affected users: ",
+      input$audience,
+      "\n\n",
+
+      "CALCULATED ASSESSMENT\n",
+      "Overall risk label: ",
+      risk_label(),
+      "\n",
+
+      "Residual risk: ",
+      round(residual_score(), 1),
+      "%\n",
+
+      "Inherent risk: ",
+      round(inherent_score(), 1),
+      "%\n",
+
+      "Control strength: ",
+      round(control_score(), 1),
+      "%\n\n",
+
+      "DOMAIN CONCERN SCORES\n",
+      paste0(
+        "- ",
+        scores$domain,
+        ": ",
+        round(scores$risk_score, 1),
+        "%",
+        collapse = "\n"
+      ),
+      "\n\n",
+
+      "ASSESSMENT ANSWERS\n",
+      answer_summary,
+      "\n\n",
+
+      "MANDATORY RED FLAGS\n",
+      flag_text,
+      "\n\n",
+
+      "Provide the following sections:\n",
+      "1. Overall assessment\n",
+      "2. Principal risks\n",
+      "3. Existing strengths and safeguards\n",
+      "4. Priority actions\n",
+      "5. Information still required\n\n",
+
+      "Use clear British English. ",
+      "Do not recalculate or contradict the supplied numerical scores. ",
+      "Do not infer controls that have not been recorded. ",
+      "Limit each section to 50 words except principal risks"
+    )
+  })
+
+  output$ai_summary <- renderUI({
+
+  if (input$generate_ai_summary == 0) {
+
+      return(
+        div(
+          class = "alert alert-info",
+          paste(
+            "Complete the Start and Assessment pages, then select",
+            "'Generate AI interpretation'."
+          )
+        )
+      )
+
+    }
+
+    summary_text <- ai_summary_result()
+
+    div(
+      class = "p-3 border rounded bg-light",
+
+      tags$div(
+        style = "white-space: pre-wrap;",
+        summary_text
+      ),
+
+      hr(),
+
+      tags$small(
+        class = "text-muted",
+        paste(
+          "This interpretation was generated by AI.",
+          "Review it before relying on it."
+        )
+      )
+    )
+  })
+
+  ai_summary_result <-
+  eventReactive(
+    input$generate_ai_summary,
+    {
+
+      req(nzchar(trimws(input$project_name)))
+      req(nzchar(trimws(input$project_description)))
+      req(completion() == 1)
+
+      withProgress(
+        message = "Generating AI RiskCheck interpretation",
+        value = 0.5,
+        {
+
+          tryCatch(
+
+            call_databricks_llm(
+              llm_prompt()
+            ),
+
+            error = function(e) {
+
+              paste0(
+                "The AI interpretation could not be generated. ",
+                conditionMessage(e)
+              )
+
+            }
+
+          )
+
+        }
+      )
+
+    },
+    ignoreInit = TRUE
+  )
 
   # ----------------------------------------------------------
   # RISK PROFILE CHART
@@ -1652,109 +1817,143 @@ server <- function(input, output, session) {
   # RECOMMENDATIONS
   # ----------------------------------------------------------
 
-recommendation_list <- reactive({
+  output$recommendations <- renderUI({
 
-  scores <- domain_scores()
+    scores <- domain_scores()
 
-  high_domains <- scores %>%
-    filter(risk_score >= 40)
+    high_domains <-
+      scores %>%
 
-  recommendations <- character(0)
-
-  if (
-    "Accuracy & analytical quality" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Introduce independent analytical QA and test AI outputs against authoritative data."
-    )
-  }
-
-  if (
-    "Data & privacy" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Review data minimisation, retention, privacy and model-training arrangements."
-    )
-  }
-
-  if (
-    "Human oversight" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Strengthen meaningful human review and clearly identify who is accountable for the final output."
-    )
-  }
-
-  if (
-    "Security & robustness" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Complete appropriate security and information assurance review."
-    )
-  }
-
-  if (
-    "Bias, fairness & ethics" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Assess whether AI performance or outcomes differ across relevant groups."
-    )
-  }
-
-  if (
-    "Transparency & explainability" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Document AI use, limitations, evidence sources and important assumptions."
-    )
-  }
-
-  if (
-    "Governance & lifecycle" %in%
-      high_domains$domain
-  ) {
-    recommendations <- c(
-      recommendations,
-      "Establish ownership, monitoring, change control and incident escalation arrangements."
-    )
-  }
-
-  if (length(recommendations) == 0) {
-    recommendations <- c(
-      "No major additional assurance activities were identified.",
-      "Continue to apply proportionate analytical QA.",
-      "Review the assessment if the AI use case changes."
-    )
-  }
-
-  recommendations
-})
-
-
-output$recommendations <- renderUI({
-
-  tagList(
-    tags$ul(
-      lapply(
-        recommendation_list(),
-        tags$li
+      filter(
+        risk_score >= 40
       )
-    )
-  )
 
-})
+    recommendations <-
+      character(0)
+
+
+    if (
+      "Accuracy and analytical quality" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Introduce independent analytical QA and test AI outputs against authoritative data."
+        )
+
+    }
+
+
+    if (
+      "Data and privacy" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Review data minimisation, retention, privacy and model-training arrangements."
+        )
+
+    }
+
+
+    if (
+      "Human oversight" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Strengthen meaningful human review and clearly identify who is accountable for the final output."
+        )
+
+    }
+
+
+    if (
+      "Security and robustness" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Complete appropriate security and information assurance review."
+        )
+
+    }
+
+
+    if (
+      "Bias, fairness and ethics" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Assess whether AI performance or outcomes differ across relevant groups."
+        )
+
+    }
+
+
+    if (
+      "Transparency and explainability" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Document AI use, limitations, evidence sources and important assumptions."
+        )
+
+    }
+
+
+    if (
+      "Governance and lifecycle" %in%
+        high_domains$domain
+    ) {
+
+      recommendations <-
+        c(
+          recommendations,
+          "Establish ownership, monitoring, change control and incident escalation arrangements."
+        )
+
+    }
+
+
+    if (
+      length(recommendations) == 0
+    ) {
+
+      recommendations <-
+        "No major additional assurance activities were identified. Continue to apply proportionate analytical QA and review the assessment if the AI use case changes."
+
+    }
+
+
+    tagList(
+
+      tags$ul(
+
+        lapply(
+          recommendations,
+          tags$li
+        )
+
+      )
+
+    )
+
+  })
 
 
   # ----------------------------------------------------------
@@ -1766,7 +1965,7 @@ output$recommendations <- renderUI({
     filename = function() {
 
       paste0(
-        "AI_Spy_Assessment_",
+        "AI_RiskCheck_Assessment_",
         Sys.Date(),
         ".csv"
       )
@@ -1821,222 +2020,6 @@ output$recommendations <- renderUI({
     }
 
   )
-
-
-  output$download_report <- downloadHandler(
-
-filename = function() {
-
-  project_filename <- input$project_name
-
-  if (
-    is.null(project_filename) ||
-    trimws(project_filename) == ""
-  ) {
-    project_filename <- "AI_riskCheck_report"
-  }
-
-  project_filename <- gsub(
-    "[^A-Za-z0-9_-]+",
-    "_",
-    trimws(project_filename)
-  )
-
-  paste0(
-    Sys.Date(),
-    "_",
-    project_filename,
-    "_AI_RiskCheck_report.html"
-  )
-},
-
-
-  contentType = "text/html",
-
-  content = function(file) {
-
-    # Convert numeric responses back to their displayed labels
-    report_answers <- scored_answers() %>%
-
-      mutate(
-
-        response_label = map2_chr(
-          type,
-          response,
-          function(question_type, response_value) {
-
-            if (is.na(response_value)) {
-              return("Not answered")
-            }
-
-            option_set <-
-              if (question_type == "risk") {
-                risk_options
-              } else {
-                control_options
-              }
-
-            matching_label <- names(
-              option_set[
-                option_set == response_value
-              ]
-            )
-
-            if (length(matching_label) == 0) {
-              return(as.character(response_value))
-            }
-
-            matching_label[[1]]
-          }
-        ),
-
-        response_rating = if_else(
-          is.na(response),
-          NA_character_,
-          paste0(
-            response,
-            " out of 4"
-          )
-        ),
-
-        concern_rating = case_when(
-          is.na(adjusted_score) ~ "Not assessed",
-          adjusted_score >= 4 ~ "Very high",
-          adjusted_score >= 3 ~ "High",
-          adjusted_score >= 2 ~ "Moderate",
-          adjusted_score >= 1 ~ "Low",
-          TRUE ~ "No concern"
-        )
-
-      ) %>%
-
-      select(
-        domain,
-        question,
-        help_text,
-        type,
-        response_label,
-        response_rating,
-        concern_rating,
-        weight,
-        adjusted_score,
-        weighted_score
-      )
-
-    report_domain_scores <- domain_scores() %>%
-      mutate(
-        risk_score = round(risk_score, 1),
-        rating = case_when(
-          risk_score < 20 ~ "Low",
-          risk_score < 40 ~ "Moderate",
-          risk_score < 60 ~ "High",
-          risk_score < 75 ~ "Very high",
-          TRUE ~ "Critical"
-        )
-      )
-
-    report_summary <- tibble(
-      measure = c(
-        "Overall AI risk verdict",
-        "Inherent risk",
-        "Control strength",
-        "Residual risk",
-        "Questions completed"
-      ),
-      result = c(
-        risk_label(),
-        paste0(
-          round(inherent_score(), 1),
-          "% - ",
-          score_to_label(inherent_score())
-        ),
-        paste0(
-          round(control_score(), 1),
-          "% - ",
-          control_to_label(control_score())
-        ),
-        paste0(
-          round(residual_score(), 1),
-          "%"
-        ),
-        paste0(
-          sum(!is.na(answers()$response)),
-          " of ",
-          nrow(questions)
-        )
-      )
-    )
-
-    report_info <- tibble(
-      field = c(
-        "Project / use case name",
-        "Description",
-        "Lifecycle stage",
-        "Type of AI",
-        "Affected audience",
-        "Assessment date"
-      ),
-      value = c(
-        ifelse(
-          is.null(input$project_name) ||
-            trimws(input$project_name) == "",
-          "Not provided",
-          input$project_name
-        ),
-        ifelse(
-          is.null(input$project_description) ||
-            trimws(input$project_description) == "",
-          "Not provided",
-          input$project_description
-        ),
-        input$lifecycle,
-        input$ai_type,
-        input$audience,
-        as.character(Sys.Date())
-      )
-    )
-
-    temp_report <- file.path(
-      tempdir(),
-      "AI_RiskCheck_report.Rmd"
-    )
-
-    copied <- file.copy(
-      "AI_RiskCheck_report.Rmd",
-      temp_report,
-      overwrite = TRUE
-    )
-
-    if (!copied) {
-      stop(
-        paste(
-          "AI_RiskCheck_report.Rmd could not be found.",
-          "Save the report template in the same directory as app.R."
-        )
-      )
-    }
-
-    rmarkdown::render(
-      input = temp_report,
-      output_file = file,
-
-      params = list(
-        report_info = report_info,
-        summary = report_summary,
-        answers = report_answers,
-        domain_scores = report_domain_scores,
-        recommendations = recommendation_list(),
-        red_flags = red_flags()
-      ),
-
-      envir = new.env(
-        parent = globalenv()
-      ),
-
-      quiet = TRUE
-    )
-  }
-)
 
 }
 
