@@ -16,7 +16,11 @@ library(tibble)
 library(ggplot2)
 library(DT)
 
+library(scales)
 
+library(rmarkdown)
+
+library(knitr)
 # ============================================================
 # 2. APP SETTINGS
 # ============================================================
@@ -1996,6 +2000,13 @@ ui <- page_navbar(
         "download_assessment",
         "Download AI RiskCheck assessment"
       ),
+      br(),
+      downloadButton(
+"download_report",
+"Download HTML report",
+class = "btn-primary"
+),
+
       
       br(),
       br()
@@ -3505,60 +3516,21 @@ server <- function(input, output, session) {
   })
   
   
-  # ==========================================================
-  # RECOMMENDATIONS
-  # ==========================================================
-  
-  output$recommendations <- renderUI({
-    
-    dat <- scored_answers() %>%
-      
-      filter(
-        !is.na(
-          adjusted_score
-        ),
-        adjusted_score >= 2
-      ) %>%
-      
-      arrange(
-        desc(
-          adjusted_score
-        ),
-        desc(
-          weight
-        )
-      ) %>%
-      
-      distinct(
-        recommended_action
-      )
-    
-    
-    if (
-      nrow(dat) == 0
-    ) {
-      
-      return(
-        
-        div(
-          class = "alert alert-success",
-          paste(
-            "No major additional assurance activities have currently",
-            "been identified. Continue to apply proportionate analytical QA."
-          )
-        )
-      )
-    }
-    
-    
-    tags$ul(
-      lapply(
-        dat$recommended_action,
-        tags$li
-      )
+# ============================================================
+# RECOMMENDATIONS
+# ============================================================
+
+output$recommendations <- renderUI({
+
+  dat <- recommendation_data()
+
+  tags$ul(
+    lapply(
+      dat$recommended_action,
+      tags$li
     )
-  })
-  
+  )
+})
   
   # ==========================================================
   # ADDITIONAL CONSIDERATIONS
@@ -3963,10 +3935,164 @@ server <- function(input, output, session) {
     )
   })
   
+
+  # ============================================================
+# REPORT HELPERS
+# ============================================================
+
+get_report_value <- function(
+  value,
+  default = "Not provided"
+) {
+
+  if (
+    is.null(value) ||
+    length(value) == 0 ||
+    all(is.na(value)) ||
+    all(trimws(as.character(value)) == "")
+  ) {
+
+    return(default)
+  }
+
+  paste(
+    value,
+    collapse = "; "
+  )
+}
+
+
+recommendation_data <- reactive({
+
+  dat <- scored_answers() %>%
+
+    filter(
+      !is.na(adjusted_score),
+      adjusted_score >= 2
+    ) %>%
+
+    arrange(
+      desc(adjusted_score),
+      desc(weight)
+    ) %>%
+
+    distinct(
+      recommended_action
+    )
+
+  if (nrow(dat) == 0) {
+
+    return(
+      tibble(
+        recommended_action = paste(
+          "No major additional assurance activities have currently",
+          "been identified. Continue to apply proportionate analytical QA."
+        )
+      )
+    )
+  }
+
+  dat
+})
+
+
+key_risk_data <- reactive({
+
+  scored_answers() %>%
+
+    filter(
+      !is.na(adjusted_score),
+      adjusted_score >= 3
+    ) %>%
+
+    arrange(
+      desc(adjusted_score),
+      desc(weight)
+    ) %>%
+
+    slice_head(
+      n = 5
+    )
+})
+
+
+decision_summary_text <- reactive({
+
+  label <- risk_label()
+
+  if (label == "INCOMPLETE") {
+
+    return(
+      paste(
+        "Assessment incomplete.",
+        "Complete all 25 questions before relying on the overall rating."
+      )
+    )
+  }
+
+  if (label == "LOW") {
+
+    return(
+      paste(
+        "Proceed with standard assurance.",
+        "The use case currently appears suitable to proceed with",
+        "proportionate analytical quality assurance and normal controls."
+      )
+    )
+  }
+
+  if (label == "MODERATE") {
+
+    return(
+      paste(
+        "Proceed with additional controls.",
+        "Address the identified areas requiring attention and",
+        "document the assurance undertaken."
+      )
+    )
+  }
+
+  if (
+    label %in%
+    c(
+      "HIGH",
+      "VERY HIGH"
+    )
+  ) {
+
+    return(
+      paste(
+        "Enhanced assurance required.",
+        "Additional testing, review and appropriate specialist assurance",
+        "should be completed before operational use."
+      )
+    )
+  }
+
+  if (label == "ESCALATION REQUIRED") {
+
+    return(
+      paste(
+        "Escalation required.",
+        "One or more material concerns should be reviewed with",
+        "the appropriate assurance or specialist team."
+      )
+    )
+  }
+
+  paste(
+    "Do not proceed without review.",
+    "AI RiskCheck has identified a stop condition.",
+    "Resolve or formally review the issue before proceeding."
+  )
+})
   
   # ==========================================================
   # DOWNLOAD
   # ==========================================================
+  
+
+
   
   output$download_assessment <- downloadHandler(
     
@@ -4093,6 +4219,481 @@ server <- function(input, output, session) {
       )
     }
   )
+
+# ============================================================
+# HTML REPORT DOWNLOAD
+# ============================================================
+
+output$download_report <- downloadHandler(
+
+  filename = function() {
+
+    project_name <- get_report_value(
+      input$project_name,
+      default = "AI_RiskCheck"
+    )
+
+    safe_name <- gsub(
+      "[^A-Za-z0-9_-]+",
+      "_",
+      project_name
+    )
+
+    safe_name <- gsub(
+      "^_+|_+$",
+      "",
+      safe_name
+    )
+
+    if (safe_name == "") {
+      safe_name <- ""
+    }
+
+    paste0(
+      safe_name,
+      "_AI_RiskCheck_Report_",
+      Sys.Date(),
+      ".html"
+    )
+  },
+
+
+  contentType = "text/html",
+
+
+  content = function(file) {
+
+    # --------------------------------------------------------
+    # ASSESSMENT INFORMATION
+    # --------------------------------------------------------
+
+    report_information <- tibble(
+
+      field = c(
+        "Application",
+        "Application version",
+        "Classification",
+        "Assessment date",
+        "Assessment status",
+        "Questions completed",
+        "App last updated",
+        "References last reviewed",
+        "Methodology status"
+      ),
+
+      value = c(
+        APP_NAME,
+        APP_VERSION,
+        CLASSIFICATION_LABEL,
+        format(
+          Sys.Date(),
+          "%d %B %Y"
+        ),
+        ifelse(
+          assessment_complete(),
+          "Complete",
+          "Incomplete"
+        ),
+        paste0(
+          completed_questions(),
+          " of ",
+          TOTAL_ASSESSMENT_QUESTIONS
+        ),
+        APP_LAST_UPDATED,
+        REFERENCES_LAST_REVIEWED,
+        "Prototype - scoring and thresholds require internal validation"
+      )
+    )
+
+
+    # --------------------------------------------------------
+    # AI SYSTEM PROFILE
+    # --------------------------------------------------------
+
+    system_profile_data <- tibble(
+
+      field = c(
+        "Project / use case",
+        "Description",
+        "How AI is used",
+        "Lifecycle stage",
+        "Audience",
+        "AI type",
+        "Environment",
+        "Provider",
+        "Model name",
+        "Model version",
+        "Hosting",
+        "Access method",
+        "Estimated monthly token usage",
+        "Estimated monthly AI cost",
+        "Usage monitored",
+        "Usage or spending limits",
+        "External or untrusted retrieved content",
+        "Retrieval permissions restricted",
+        "Prompt-injection testing",
+        "Agent actions",
+        "Agent permissions"
+      ),
+
+      value = c(
+        get_report_value(input$project_name),
+        get_report_value(input$project_description),
+        get_report_value(input$ai_uses),
+        get_report_value(input$lifecycle),
+        get_report_value(input$audience),
+        get_report_value(input$ai_type),
+        get_report_value(input$environment),
+        get_report_value(input$provider),
+        get_report_value(input$model_name),
+        get_report_value(input$model_version),
+        get_report_value(input$hosting),
+        get_report_value(input$access_method),
+        get_report_value(input$monthly_tokens),
+        get_report_value(input$monthly_cost),
+        get_report_value(input$usage_monitoring),
+        get_report_value(input$usage_limits),
+        get_report_value(input$rag_external),
+        get_report_value(input$rag_permissions),
+        get_report_value(input$prompt_injection_testing),
+        get_report_value(input$agent_actions),
+        get_report_value(input$agent_permissions)
+      )
+    )
+
+
+    # --------------------------------------------------------
+    # OVERALL RESULTS
+    # --------------------------------------------------------
+
+    results_summary <- tibble(
+
+      measure = c(
+        "Overall rating",
+        "Inherent risk",
+        "Control strength",
+        "Residual risk",
+        "Assessment complete"
+      ),
+
+      result = c(
+        risk_label(),
+
+        paste0(
+          round(
+            inherent_score(),
+            1
+          ),
+          "% - ",
+          risk_description(
+            inherent_score()
+          )
+        ),
+
+        paste0(
+          round(
+            control_score(),
+            1
+          ),
+          "% - ",
+          control_description(
+            control_score()
+          )
+        ),
+
+        if (
+          assessment_complete()
+        ) {
+          paste0(
+            round(
+              residual_score(),
+              1
+            ),
+            "%"
+          )
+        } else {
+          "Not finalised because the assessment is incomplete"
+        },
+
+        ifelse(
+          assessment_complete(),
+          "Yes",
+          "No"
+        )
+      )
+    )
+
+
+    # --------------------------------------------------------
+    # QUESTION ANSWERS
+    # --------------------------------------------------------
+
+    report_answers <- scored_answers() %>%
+
+      mutate(
+
+        question_number = row_number(),
+
+        question_type = case_when(
+          type == "risk" ~ "Risk",
+          type == "control" ~ "Control",
+          TRUE ~ type
+        ),
+
+        raw_rating = case_when(
+          raw_response == "NR" ~ "Not relevant",
+          is.na(raw_response) ~ "Not answered",
+          TRUE ~ paste0(
+            raw_response,
+            " out of 4"
+          )
+        ),
+
+        adjusted_rating = case_when(
+          is.na(adjusted_score) ~ "Excluded from scoring",
+          TRUE ~ paste0(
+            round(
+              adjusted_score,
+              1
+            ),
+            " out of 4"
+          )
+        ),
+
+        weighted_rating = case_when(
+          is.na(weighted_score) ~ "Excluded from scoring",
+          TRUE ~ as.character(
+            round(
+              weighted_score,
+              1
+            )
+          )
+        ),
+
+        report_notes = case_when(
+          is.na(notes) | trimws(notes) == "" ~
+            "No notes recorded",
+          TRUE ~ notes
+        )
+      ) %>%
+
+      select(
+        question_number,
+        domain,
+        question,
+        help_text,
+        question_type,
+        response_text,
+        raw_rating,
+        concern,
+        report_notes,
+        weight,
+        adjusted_rating,
+        weighted_rating,
+        principle,
+        source,
+        recommended_action
+      )
+
+
+    # --------------------------------------------------------
+    # DOMAIN SCORES
+    # --------------------------------------------------------
+
+    report_domain_scores <- domain_scores() %>%
+
+      mutate(
+
+        risk_score = round(
+          risk_score,
+          1
+        ),
+
+        rating = case_when(
+          risk_score < 20 ~ "Low",
+          risk_score < 40 ~ "Moderate",
+          risk_score < 60 ~ "High",
+          risk_score < 75 ~ "Very high",
+          TRUE ~ "Critical"
+        )
+      )
+
+
+    # --------------------------------------------------------
+    # FLAGS
+    # --------------------------------------------------------
+
+    report_flags <- flags()
+
+    if (nrow(report_flags) == 0) {
+
+      report_flags <- tibble(
+        severity = "None",
+        issue = paste(
+          "No automatic escalation or stop conditions",
+          "were identified."
+        )
+      )
+    }
+
+
+    # --------------------------------------------------------
+    # KEY RISKS
+    # --------------------------------------------------------
+
+    report_key_risks <- key_risk_data() %>%
+
+      transmute(
+        domain = domain,
+        question = question,
+        response = response_text,
+        notes = if_else(
+          is.na(notes) | trimws(notes) == "",
+          "No notes recorded",
+          notes
+        ),
+        concern = concern,
+        recommended_action = recommended_action
+      )
+
+    if (nrow(report_key_risks) == 0) {
+
+      report_key_risks <- tibble(
+        domain = "None identified",
+        question = paste(
+          "No high-concern responses have currently",
+          "been identified."
+        ),
+        response = "",
+        notes = "",
+        concern = "No high concern",
+        recommended_action = paste(
+          "Continue to apply proportionate analytical",
+          "quality assurance."
+        )
+      )
+    }
+
+
+    # --------------------------------------------------------
+    # RECOMMENDATIONS
+    # --------------------------------------------------------
+
+    report_recommendations <-
+      recommendation_data()$recommended_action
+
+
+    # --------------------------------------------------------
+    # ADDITIONAL CONSIDERATIONS
+    # --------------------------------------------------------
+
+    report_additional_considerations <-
+      get_report_value(
+        input$additional_considerations,
+        default = "No additional considerations were recorded."
+      )
+
+
+    # --------------------------------------------------------
+    # COPY AND RENDER TEMPLATE
+    # --------------------------------------------------------
+
+    template_path <- file.path(
+      getwd(),
+      "AI_RiskCheck_Report.Rmd"
+    )
+
+    if (!file.exists(template_path)) {
+
+      stop(
+        paste(
+          "The report template AI_RiskCheck_Report.Rmd",
+          "could not be found in the application directory."
+        )
+      )
+    }
+
+    temporary_report <- file.path(
+      tempdir(),
+      "AI_RiskCheck_Report.Rmd"
+    )
+
+    copied <- file.copy(
+      from = template_path,
+      to = temporary_report,
+      overwrite = TRUE
+    )
+
+    if (!copied) {
+
+      stop(
+        "The report template could not be copied to the temporary directory."
+      )
+    }
+
+    rmarkdown::render(
+
+      input = temporary_report,
+
+      output_file = basename(file),
+
+      output_dir = dirname(file),
+
+      params = list(
+
+        app_name =
+          APP_NAME,
+
+        app_version =
+          APP_VERSION,
+
+        classification =
+          CLASSIFICATION_LABEL,
+
+        report_information =
+          report_information,
+
+        system_profile =
+          system_profile_data,
+
+        results_summary =
+          results_summary,
+
+        decision_summary =
+          decision_summary_text(),
+
+        domain_scores =
+          report_domain_scores,
+
+        flags =
+          report_flags,
+
+        key_risks =
+          report_key_risks,
+
+        recommendations =
+          report_recommendations,
+
+        additional_considerations =
+          report_additional_considerations,
+
+        answers =
+          report_answers,
+
+        references =
+          references
+      ),
+
+      envir = new.env(
+        parent = globalenv()
+      ),
+
+      quiet = TRUE
+    )
+  }
+)
+
+
 }
 
 
