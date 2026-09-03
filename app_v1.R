@@ -206,7 +206,7 @@ questions <- tribble(
   
   "impact_2",
   "Impact & human oversight",
-  "Could the AI output influence significant policy, operational, funding, rights, entitlement or individual decisions?",
+  "To what extent does the AI output influence significant policy, operational, funding, rights, entitlement or individual decisions?",
   paste(
     "AI that materially informs consequential decisions requires",
     "stronger assurance and meaningful human involvement."
@@ -223,7 +223,7 @@ questions <- tribble(
   
   "impact_3",
   "Impact & human oversight",
-  "Can the AI make decisions, trigger actions or change systems without human approval?",
+  "What magnitude of decisions, actions or changes can the AI influence without human approval?",
   paste(
     "Greater AI autonomy can increase the consequences of errors,",
     "unexpected behaviour or malicious inputs."
@@ -278,7 +278,7 @@ questions <- tribble(
   
   "data_2",
   "Data, privacy & legal",
-  "Does the AI process personal, sensitive, confidential or unpublished departmental information?",
+  "What level of personal, sensitive, confidential or unpublished departmental information is the AI processing?",
   paste(
     "More sensitive information creates greater privacy, confidentiality,",
     "security and information-management risk."
@@ -405,7 +405,7 @@ questions <- tribble(
   
   "ethics_1",
   "Fairness, transparency & stakeholders",
-  "Could the AI create unfair, biased or materially different outcomes for particular people or groups?",
+  "What is the likelihood of AI creating unfair, biased or materially different outcomes for particular people or groups?",
   paste(
     "Consider protected characteristics, accessibility, vulnerable groups,",
     "representation in data and differences in model performance."
