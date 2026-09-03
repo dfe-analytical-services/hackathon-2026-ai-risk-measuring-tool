@@ -1,5 +1,6 @@
 {
   "DATABRICKS_HOST": "https://adb-5037484389568426.6.azuredatabricks.net/",
   "DATABRICKS_SQL_PATH": "/sql/1.0/warehouses/....",
-  "DATABRICKS_TOKEN": "...."
+  "DATABRICKS_TOKEN": "....",
+  "DATABRICKS_ENDPOINT": "databricks-claude-opus-4-7"
 }

@@ -580,7 +580,7 @@ ui <- page_navbar(
 
           fluidRow(
             column(4, uiOutput("risk_badge")),
-            column(4, h2(textOutput("inherent_label"))),
+            column(4, h2(textOutput("residual_score_text"))),
             column(4, h2(textOutput("control_label")))
           )
         ),
