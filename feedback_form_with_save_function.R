@@ -16,20 +16,16 @@ library(tibble)
 library(ggplot2)
 library(DT)
 
-library(scales)
 
-library(rmarkdown)
-
-library(knitr)
 # ============================================================
 # 2. APP SETTINGS
 # ============================================================
 
 APP_NAME <- "AI RiskCheck"
-APP_VERSION <- "1.1 Prototype"
+APP_VERSION <- "1.3 Prototype"
 
-APP_LAST_UPDATED <- "2 September 2026"
-REFERENCES_LAST_REVIEWED <- "2 September 2026"
+APP_LAST_UPDATED <- "3 September 2026"
+REFERENCES_LAST_REVIEWED <- "3 September 2026"
 
 TOTAL_ASSESSMENT_QUESTIONS <- 25
 
@@ -38,38 +34,65 @@ CLASSIFICATION_LABEL <-
 
 
 # ============================================================
-# 3. RESPONSE OPTIONS
+# 3. LOCAL STORAGE SETTINGS
 # ============================================================
 
-# Risk questions:
-# Higher value = greater inherent risk
-# NR = Not relevant and excluded from scoring
+SAVED_CASE_DIR <- "saved_cases"
+
+if (!dir.exists(SAVED_CASE_DIR)) {
+  dir.create(
+    SAVED_CASE_DIR,
+    recursive = TRUE
+  )
+}
+
+
+FEEDBACK_DIR <- "feedback"
+
+if (!dir.exists(FEEDBACK_DIR)) {
+  dir.create(
+    FEEDBACK_DIR,
+    recursive = TRUE
+  )
+}
+
+
+FEEDBACK_FILE <- file.path(
+  FEEDBACK_DIR,
+  "ai_riskcheck_feedback.csv"
+)
+
+
+# ============================================================
+# 4. RESPONSE OPTIONS
+# ============================================================
 
 risk_options <- c(
+  
   "None / negligible" = "0",
   "Low" = "1",
   "Moderate" = "2",
   "High" = "3",
   "Very high" = "4",
   "Not relevant" = "NR"
+  
 )
 
 
-# Control questions:
-# Higher value = stronger control
-
 control_options <- c(
+  
   "No" = "0",
   "Mostly no" = "1",
   "Partly" = "2",
   "Mostly yes" = "3",
   "Yes" = "4",
   "Not relevant" = "NR"
+  
 )
 
 
 # ============================================================
-# 4. 25-QUESTION ASSESSMENT MATRIX
+# 5. 25 QUESTION ASSESSMENT MATRIX
 # ============================================================
 
 questions <- tribble(
@@ -87,7 +110,7 @@ questions <- tribble(
   
   # ==========================================================
   # 1. PURPOSE, VALUE & APPROPRIATENESS
-  # 3 QUESTIONS
+  # 3 questions
   # ==========================================================
   
   "purpose_1",
@@ -98,7 +121,7 @@ questions <- tribble(
     "rather than being introduced simply because the technology is available."
   ),
   "control",
-  3,
+  5,
   "UK Government AI Playbook; NAO Good Practice Guide; AI Opportunities Action Plan",
   "Clear purpose and user need",
   paste(
@@ -115,7 +138,7 @@ questions <- tribble(
     "may sometimes meet the need more simply and with less risk."
   ),
   "control",
-  3,
+  5,
   "UK Government AI Playbook; NAO Good Practice Guide",
   "Use the right tool for the job",
   paste(
@@ -132,7 +155,7 @@ questions <- tribble(
     "and effectiveness can be assessed."
   ),
   "control",
-  3,
+  5,
   "AI Opportunities Action Plan; NAO Good Practice Guide",
   "Evaluate value and outcomes",
   paste(
@@ -143,7 +166,7 @@ questions <- tribble(
   
   # ==========================================================
   # 2. IMPACT & HUMAN OVERSIGHT
-  # 4 QUESTIONS
+  # 4 questions
   # ==========================================================
   
   "impact_1",
@@ -210,13 +233,13 @@ questions <- tribble(
   "Meaningful human control",
   paste(
     "Introduce documented human review by a suitably competent person",
-    "with the authority and evidence needed to challenge the AI."
+    "with authority and evidence to challenge the AI."
   ),
   
   
   # ==========================================================
   # 3. DATA, PRIVACY & LEGAL
-  # 4 QUESTIONS
+  # 4 questions
   # ==========================================================
   
   "data_1",
@@ -261,7 +284,7 @@ questions <- tribble(
     "content can lawfully and appropriately be supplied to and used by AI."
   ),
   "control",
-  4,
+  5,
   "Data and AI Ethics Framework; UK Government AI Playbook; NAO Good Practice Guide",
   "Lawful use and data governance",
   paste(
@@ -289,7 +312,7 @@ questions <- tribble(
   
   # ==========================================================
   # 4. QUALITY, TESTING & RELIABILITY
-  # 4 QUESTIONS
+  # 4 questions
   # ==========================================================
   
   "quality_1",
@@ -305,7 +328,7 @@ questions <- tribble(
   "Testing, evaluation and robustness",
   paste(
     "Create a representative evaluation set and test normal cases,",
-    "edge cases and important known failure modes."
+    "edge cases and known failure modes."
   ),
   
   
@@ -313,8 +336,8 @@ questions <- tribble(
   "Quality, testing & reliability",
   "Are important AI-generated facts, evidence, citations, calculations, analytical conclusions or code independently verified?",
   paste(
-    "This is especially important when analysts use AI to create code,",
-    "generate deliverables, summarise evidence or produce quantitative outputs."
+    "This is particularly important where AI generates code,",
+    "analytical deliverables, evidence summaries or quantitative outputs."
   ),
   "control",
   5,
@@ -334,12 +357,12 @@ questions <- tribble(
     "and what level of failure would prevent deployment."
   ),
   "control",
-  4,
+  5,
   "NAO Good Practice Guide; AI Opportunities Action Plan",
   "Evaluation and evidence",
   paste(
     "Define measurable performance criteria, acceptable error thresholds",
-    "and conditions for proceeding, revising or stopping the use case."
+    "and conditions for proceeding, revising or stopping."
   ),
   
   
@@ -351,18 +374,18 @@ questions <- tribble(
     "investigation, audit and understanding of how outputs were produced."
   ),
   "control",
-  4,
+  5,
   "UK Government AI Playbook; Data and AI Ethics Framework",
   "Transparency and reproducibility",
   paste(
-    "Retain appropriate records of models, prompts, data sources,",
-    "retrieved documents, important settings and analytical decisions."
+    "Retain records of models, prompts, data sources, retrieved documents,",
+    "settings and analytical decisions."
   ),
   
   
   # ==========================================================
   # 5. FAIRNESS, TRANSPARENCY & STAKEHOLDERS
-  # 3 QUESTIONS
+  # 3 questions
   # ==========================================================
   
   "ethics_1",
@@ -386,16 +409,16 @@ questions <- tribble(
   "Fairness, transparency & stakeholders",
   "Is it clear to users where AI has been used and what its important limitations and uncertainties are?",
   paste(
-    "Users should understand material AI involvement so they can",
+    "Users should understand material AI involvement so that they can",
     "interpret outputs appropriately and avoid over-reliance."
   ),
   "control",
-  4,
+ 5,
   "UK Government AI Playbook; Data and AI Ethics Framework",
   "Transparency and explainability",
   paste(
     "Document and communicate where AI is used, important limitations",
-    "and circumstances where outputs should not be relied on."
+    "and when outputs should not be relied on."
   ),
   
   
@@ -407,18 +430,18 @@ questions <- tribble(
     "and ways to report or challenge problems."
   ),
   "control",
-  4,
+  5,
   "Data and AI Ethics Framework; NAO Good Practice Guide",
   "Stakeholder engagement and societal impact",
   paste(
-    "Identify relevant stakeholders and affected groups and provide",
-    "proportionate routes for feedback, challenge and redress."
+    "Identify relevant stakeholders and provide proportionate routes",
+    "for feedback, challenge and redress."
   ),
   
   
   # ==========================================================
   # 6. SECURITY, PLATFORM & SUPPLIER
-  # 3 QUESTIONS
+  # 3 questions
   # ==========================================================
   
   "security_1",
@@ -433,8 +456,8 @@ questions <- tribble(
   "UK Government AI Playbook; NAO Good Practice Guide",
   "Secure and appropriate AI use",
   paste(
-    "Confirm that the platform is approved for the intended",
-    "use and information before implementation."
+    "Confirm that the platform is approved for the intended use",
+    "and information before implementation."
   ),
   
   
@@ -450,8 +473,8 @@ questions <- tribble(
   "UK Government AI Playbook; NAO Good Practice Guide",
   "Security by design",
   paste(
-    "Assess relevant AI-specific threats, restrict access using",
-    "least privilege and test important security controls."
+    "Assess AI-specific threats, restrict access using least privilege",
+    "and test important security controls."
   ),
   
   
@@ -463,7 +486,7 @@ questions <- tribble(
     "resilience, model changes, versioning and dependency on third parties."
   ),
   "control",
-  4,
+  5,
   "NAO Good Practice Guide; UK Government AI Playbook",
   "Commercial and supplier risk",
   paste(
@@ -474,7 +497,7 @@ questions <- tribble(
   
   # ==========================================================
   # 7. GOVERNANCE, ACCOUNTABILITY & SKILLS
-  # 2 QUESTIONS
+  # 2 questions
   # ==========================================================
   
   "governance_1",
@@ -489,8 +512,8 @@ questions <- tribble(
   "NAO Use of AI in Government; UK Government AI Playbook; Data and AI Ethics Framework",
   "Accountability and organisational assurance",
   paste(
-    "Assign a named accountable owner and document review,",
-    "escalation and incident-management arrangements."
+    "Assign a named accountable owner and document review, escalation",
+    "and incident-management arrangements."
   ),
   
   
@@ -502,7 +525,7 @@ questions <- tribble(
     "its limitations, analytical context and subject matter."
   ),
   "control",
-  4,
+  5,
   "NAO Use of AI in Government; NAO Good Practice Guide; UK Government AI Playbook",
   "Skills and capability",
   paste(
@@ -513,7 +536,7 @@ questions <- tribble(
   
   # ==========================================================
   # 8. LIFECYCLE, MONITORING & SCALE
-  # 2 QUESTIONS
+  # 2 questions
   # ==========================================================
   
   "lifecycle_1",
@@ -528,8 +551,8 @@ questions <- tribble(
   "UK Government AI Playbook; Data and AI Ethics Framework",
   "Lifecycle management and continuous assurance",
   paste(
-    "Introduce ongoing monitoring, change control and proportionate",
-    "retesting following material changes."
+    "Introduce monitoring, change control and proportionate retesting",
+    "following material changes."
   ),
   
   
@@ -545,23 +568,25 @@ questions <- tribble(
   "NAO Good Practice Guide; AI Opportunities Action Plan; UK Government AI Playbook",
   "Pilot, evaluate and scale responsibly",
   paste(
-    "Complete formal evaluation before operational deployment and",
-    "establish clear pause, rollback or decommissioning arrangements."
+    "Complete formal evaluation before operational deployment and establish",
+    "pause, rollback or decommissioning arrangements."
   )
+  
 )
 
 
 # ============================================================
-# CHECK EXACTLY 25 QUESTIONS
+# CONFIRM EXACTLY 25 QUESTIONS
 # ============================================================
 
 stopifnot(
-  nrow(questions) == TOTAL_ASSESSMENT_QUESTIONS
+  nrow(questions) ==
+    TOTAL_ASSESSMENT_QUESTIONS
 )
 
 
 # ============================================================
-# 5. REFERENCES
+# 6. REFERENCES
 # ============================================================
 
 references <- tribble(
@@ -587,7 +612,7 @@ references <- tribble(
   "Artificial Intelligence Playbook for the UK Government",
   "UK Government",
   "2025",
-  "Government guidance for using AI safely, responsibly and effectively.",
+  "Government guidance for safe, responsible and effective AI use.",
   "https://www.gov.uk/government/publications/ai-playbook-for-the-uk-government/artificial-intelligence-playbook-for-the-uk-government-html",
   
   "AI Opportunities Action Plan",
@@ -601,466 +626,251 @@ references <- tribble(
   "2025",
   "Framework covering transparency, accountability, fairness, privacy and societal impact.",
   "https://www.gov.uk/government/publications/data-ethics-framework/data-and-ai-ethics-framework"
+  
 )
 
 
 # ============================================================
-# 6. CSS
+# 7. CSS
 # ============================================================
 
 app_css <- HTML("
 
-/* ==========================================================
-   PAGE
-   ========================================================== */
-
 body {
-  background-color: #f4f8fb;
-  color: #0b0c0c;
-  font-size: 16px;
+  background-color:#f4f8fb;
+  color:#0b0c0c;
+  font-size:16px;
 }
-
-.container,
-.container-fluid {
-  padding-top: 8px;
-}
-
-
-/* ==========================================================
-   NAVBAR
-   ========================================================== */
 
 .navbar {
-  background-color: #003764 !important;
-  border-bottom: 5px solid #347CA9;
-  padding-top: 10px;
-  padding-bottom: 10px;
+  background-color:#003764 !important;
+  border-bottom:5px solid #347CA9;
 }
 
 .navbar-brand {
-  color: white !important;
-  font-weight: 800;
+  color:white !important;
+  font-weight:800;
 }
 
 .ai-riskcheck-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: white;
-  font-size: 21px;
-  font-weight: 800;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  color:white;
+  font-size:21px;
+  font-weight:800;
 }
 
-
-/* ==========================================================
-   NAV TABS
-   ========================================================== */
-
 .navbar-nav .nav-link {
-  color: white !important;
-  font-weight: 700;
-  margin-right: 6px;
-  padding: 10px 15px !important;
-  border-radius: 5px 5px 0 0;
+  color:white !important;
+  font-weight:700;
+  margin-right:5px;
+  padding:10px 15px !important;
+  border-radius:5px 5px 0 0;
 }
 
 .navbar-nav .nav-item:nth-child(1) .nav-link {
-  background-color: #1d70b8;
+  background:#1d70b8;
 }
 
 .navbar-nav .nav-item:nth-child(2) .nav-link {
-  background-color: #158187;
+  background:#158187;
 }
 
 .navbar-nav .nav-item:nth-child(3) .nav-link {
-  background-color: #54319f;
+  background:#54319f;
 }
 
 .navbar-nav .nav-item:nth-child(4) .nav-link {
-  background-color: #0f7a52;
+  background:#0f7a52;
 }
 
 .navbar-nav .nav-item:nth-child(5) .nav-link {
-  background-color: #347CA9;
+  background:#347CA9;
 }
 
 .navbar-nav .nav-link:hover {
-  text-decoration: underline;
-  filter: brightness(90%);
+  filter:brightness(90%);
+  text-decoration:underline;
 }
 
 .navbar-nav .nav-link.active {
-  background-color: white !important;
-  color: #0b0c0c !important;
-  border-bottom: 5px solid #ffdd00;
+  background:white !important;
+  color:#0b0c0c !important;
+  border-bottom:5px solid #ffdd00;
 }
-
-
-/* ==========================================================
-   CLASSIFICATION BANNER
-   ========================================================== */
 
 .classification-banner {
-  background-color: #fff8cc;
-  color: #0b0c0c;
-  border-bottom: 3px solid #ffdd00;
-  padding: 8px 20px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+  background:#fff8cc;
+  border-bottom:3px solid #ffdd00;
+  padding:8px 20px;
+  text-align:center;
+  font-weight:800;
 }
 
-
-/* ==========================================================
-   HEADINGS
-   ========================================================== */
-
-h1 {
-  color: #003764;
-  font-weight: 800;
+h1,
+h2,
+h3 {
+  color:#003764;
+  font-weight:800;
 }
 
 h2 {
-  color: #003764;
-  font-weight: 800;
-  border-bottom: 4px solid #347CA9;
-  padding-bottom: 8px;
-  margin-bottom: 22px;
-}
-
-h3 {
-  color: #003764;
-  font-weight: 800;
+  border-bottom:4px solid #347CA9;
+  padding-bottom:8px;
 }
 
 h4,
 h5 {
-  color: #0b0c0c;
-  font-weight: 700;
+  font-weight:700;
 }
 
-
-/* ==========================================================
-   CARDS
-   ========================================================== */
-
 .card {
-  border: 1px solid #cecece;
-  border-radius: 7px;
-  background-color: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
-  overflow: visible;
+  border:1px solid #cecece;
+  border-radius:7px;
+  box-shadow:0 2px 6px rgba(0,0,0,.07);
+  background:white;
+  overflow:visible;
 }
 
 .card-header {
-  background-color: #f4f8fb;
-  border-bottom: 4px solid #347CA9;
-  padding: 15px 20px;
-  font-weight: 800;
-}
-
-.card-header h3,
-.card-header h4 {
-  margin: 0;
-  color: #003764;
-  font-weight: 800;
+  background:#f4f8fb;
+  border-bottom:4px solid #347CA9;
+  font-weight:800;
 }
 
 .card-body {
-  padding: 22px;
-}
-
-
-/* ==========================================================
-   ASSESSMENT DOMAIN COLOURS
-   ========================================================== */
-
-#questions_ui > .card:nth-child(1) {
-  border-left: 7px solid #1d70b8;
-}
-
-#questions_ui > .card:nth-child(2) {
-  border-left: 7px solid #ca357c;
-}
-
-#questions_ui > .card:nth-child(3) {
-  border-left: 7px solid #158187;
-}
-
-#questions_ui > .card:nth-child(4) {
-  border-left: 7px solid #54319f;
-}
-
-#questions_ui > .card:nth-child(5) {
-  border-left: 7px solid #f47738;
-}
-
-#questions_ui > .card:nth-child(6) {
-  border-left: 7px solid #ca3535;
-}
-
-#questions_ui > .card:nth-child(7) {
-  border-left: 7px solid #347CA9;
-}
-
-#questions_ui > .card:nth-child(8) {
-  border-left: 7px solid #0f7a52;
-}
-
-
-/* ==========================================================
-   QUESTION STYLING
-   ========================================================== */
-
-.question-title {
-  font-size: 1.12rem;
-  font-weight: 750;
-  line-height: 1.4;
-  color: #0b0c0c;
+  padding:22px;
 }
 
 .question-number {
-  display: inline-block;
-  background-color: #003764;
-  color: white;
-  font-weight: 800;
-  min-width: 31px;
-  height: 31px;
-  line-height: 31px;
-  text-align: center;
-  border-radius: 50%;
-  margin-right: 9px;
+  display:inline-block;
+  background:#003764;
+  color:white;
+  font-weight:800;
+  min-width:31px;
+  height:31px;
+  line-height:31px;
+  text-align:center;
+  border-radius:50%;
+  flex-shrink:0;
 }
 
-
-/* ==========================================================
-   INFO ICON
-   ========================================================== */
+.question-title {
+  font-size:1.12rem;
+  font-weight:750;
+  line-height:1.4;
+}
 
 .ai-info-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
-  background-color: #1d70b8;
-  color: white;
-  font-size: 15px;
-  font-weight: 800;
-  cursor: help;
-  flex-shrink: 0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  background:#1d70b8;
+  color:white;
+  font-size:15px;
+  font-weight:800;
+  cursor:help;
+  flex-shrink:0;
 }
 
-.ai-info-icon:hover {
-  background-color: #0f385c;
+.notes-label {
+  font-weight:700;
+  margin-top:8px;
 }
-
-
-/* ==========================================================
-   FORM CONTROLS
-   ========================================================== */
 
 textarea.form-control,
 input.form-control,
 select.form-select {
-  border: 2px solid #0b0c0c;
-  border-radius: 3px;
+  border:2px solid #0b0c0c;
 }
 
 textarea.form-control:focus,
 input.form-control:focus,
 select.form-select:focus {
-  border-color: #0b0c0c;
-  box-shadow: 0 0 0 4px #ffdd00;
+  border-color:#0b0c0c;
+  box-shadow:0 0 0 4px #ffdd00;
 }
-
-.radio label,
-.checkbox label {
-  padding: 5px 8px;
-}
-
-.radio label:hover,
-.checkbox label:hover {
-  background-color: #f4f8fb;
-  border-radius: 4px;
-}
-
-
-/* ==========================================================
-   NOTES
-   ========================================================== */
-
-.notes-label {
-  font-weight: 700;
-  color: #484949;
-  margin-top: 8px;
-}
-
-
-/* ==========================================================
-   SIDEBAR
-   ========================================================== */
-
-.bslib-sidebar-layout > .sidebar {
-  background-color: #f4f8fb;
-  border-right: 4px solid #347CA9;
-}
-
-
-/* ==========================================================
-   PROGRESS
-   ========================================================== */
 
 .progress {
-  height: 25px;
-  background-color: #cecece;
+  height:25px;
 }
 
 .progress-bar {
-  background-color: #1d70b8;
-  font-weight: 800;
+  background:#1d70b8;
+  font-weight:800;
 }
-
-
-/* ==========================================================
-   ALERTS
-   ========================================================== */
-
-.alert-info {
-  background-color: #f4f8fb;
-  border-left: 5px solid #1d70b8;
-  color: #0b0c0c;
-}
-
-.alert-warning {
-  background-color: #fff8cc;
-  border-left: 5px solid #ffdd00;
-  color: #0b0c0c;
-}
-
-.alert-success {
-  background-color: #f3f8f6;
-  border-left: 5px solid #0f7a52;
-  color: #0b0c0c;
-}
-
-.alert-danger {
-  background-color: #fcf5f5;
-  border-left: 5px solid #ca3535;
-  color: #0b0c0c;
-}
-
-.alert-secondary {
-  border-left: 5px solid #347CA9;
-}
-
-
-/* ==========================================================
-   RESULTS CARDS
-   ========================================================== */
 
 .result-card-overall {
-  border-top: 7px solid #1d70b8;
+  border-top:7px solid #1d70b8;
 }
 
 .result-card-inherent {
-  border-top: 7px solid #f47738;
+  border-top:7px solid #f47738;
 }
 
 .result-card-controls {
-  border-top: 7px solid #0f7a52;
+  border-top:7px solid #0f7a52;
 }
 
-.result-value {
-  font-size: 2rem;
-  font-weight: 800;
+.save-card {
+  border-left:7px solid #158187;
 }
 
+.use-case-id-box {
+  background:#eef7f7;
+  border:2px solid #158187;
+  border-radius:5px;
+  padding:15px;
+}
 
-/* ==========================================================
-   TABLES
-   ========================================================== */
+.feedback-card {
+  border-left:7px solid #158187;
+}
+
+.feedback-card .card-header {
+  background:#eef7f7;
+}
+
+.alert-info {
+  border-left:5px solid #1d70b8;
+}
+
+.alert-warning {
+  border-left:5px solid #ffdd00;
+}
+
+.alert-danger {
+  border-left:5px solid #ca3535;
+}
+
+.alert-success {
+  border-left:5px solid #0f7a52;
+}
 
 table.dataTable thead th {
-  background-color: #003764 !important;
-  color: white !important;
-  font-weight: 800;
+  background:#003764 !important;
+  color:white !important;
+  font-weight:700;
 }
-
-.table-striped > tbody > tr:nth-of-type(odd) > * {
-  background-color: #f4f8fb;
-}
-
-
-/* ==========================================================
-   LINKS / BUTTONS
-   ========================================================== */
-
-a {
-  color: #1a65a6;
-  font-weight: 600;
-}
-
-a:hover {
-  color: #0f385c;
-}
-
-.btn-primary,
-.btn-default,
-.btn-download {
-  background-color: #1d70b8;
-  border-color: #1d70b8;
-  color: white;
-  font-weight: 700;
-}
-
-.btn-primary:hover,
-.btn-default:hover {
-  background-color: #0f385c;
-  border-color: #0f385c;
-}
-
-
-/* ==========================================================
-   ACCESSIBILITY FOCUS
-   ========================================================== */
 
 a:focus,
 button:focus,
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 4px solid #ffdd00 !important;
-  outline-offset: 2px;
-}
-
-
-/* ==========================================================
-   MOBILE
-   ========================================================== */
-
-@media (max-width: 768px) {
-
-  .navbar-nav .nav-link {
-    margin-bottom: 5px;
-  }
-
-  .card-body {
-    padding: 15px;
-  }
-
-  .classification-banner {
-    font-size: 12px;
-  }
+  outline:4px solid #ffdd00 !important;
+  outline-offset:2px;
 }
 
 ")
 
 
 # ============================================================
-# 7. USER INTERFACE
+# 8. USER INTERFACE
 # ============================================================
 
 ui <- page_navbar(
@@ -1076,6 +886,7 @@ ui <- page_navbar(
     ),
     
     strong(APP_NAME)
+    
   ),
   
   
@@ -1095,11 +906,12 @@ ui <- page_navbar(
       class = "classification-banner",
       CLASSIFICATION_LABEL
     )
+    
   ),
   
   
   # ==========================================================
-  # OVERVIEW
+  # TAB 1 - OVERVIEW
   # ==========================================================
   
   nav_panel(
@@ -1114,30 +926,10 @@ ui <- page_navbar(
         
         card_body(
           
-          div(
-            
-            style = "
-              display:flex;
-              align-items:center;
-              gap:15px;
-              margin-bottom:18px;
-            ",
-            
-            tags$img(
-              src = "dfe-logo.png",
-              height = "58px",
-              alt = "Department for Education logo"
-            ),
-            
-            div(
-              h1(
-                style = "margin-bottom:2px;",
-                APP_NAME
-              ),
-              h4(
-                "Responsible AI Risk Self-Assessment Tool"
-              )
-            )
+          h1(APP_NAME),
+          
+          h4(
+            "Responsible AI Risk Self-Assessment Tool"
           ),
           
           p(
@@ -1148,46 +940,43 @@ ui <- page_navbar(
             )
           ),
           
-          hr(),
-          
           p(
             paste(
-              "AI is increasingly used to generate code, create deliverables,",
-              "summarise evidence, analyse data and improve analytical processes."
-            )
-          ),
-          
-          p(
-            paste(
-              "AI RiskCheck helps identify quality, ethical, legal, security,",
-              "governance and technical risks associated with these uses."
+              "AI RiskCheck supports analysts using AI to generate code,",
+              "create deliverables, summarise evidence, analyse data,",
+              "support decisions and automate analytical processes."
             )
           ),
           
           div(
+            
             class = "alert alert-info",
             
             strong("Important: "),
             
             paste(
-              "AI RiskCheck supports professional judgement. It does not replace",
-              "analytical QA, information assurance, security, data protection,",
-              "legal, commercial or other required departmental approval processes."
+              "AI RiskCheck supports professional judgement and does not",
+              "replace analytical QA, security, legal, information assurance",
+              "or data-protection processes."
             )
+            
           ),
           
           div(
+            
             class = "alert alert-secondary",
             
             strong("Questions or support: "),
             
             paste(
-              "If you are unsure how to answer a question, interpret your risk",
-              "rating or decide what assurance action may be appropriate,",
-              "contact the AOE Centre of Excellence team."
+              "If you need help completing the assessment or interpreting",
+              "the results, contact the AOE Centre of Excellence team."
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
@@ -1201,46 +990,37 @@ ui <- page_navbar(
         
         card_body(
           
-          p(
-            "Work through the five tabs from left to right."
-          ),
-          
-          fluidRow(
+          tags$ol(
             
-            column(
-              6,
-              
-              h4("1. Overview"),
-              p(
-                "Understand what the tool is, when to use it and what it assesses."
-              ),
-              
-              h4("2. AI & Model Profile"),
-              p(
-                "Describe your use case, model, provider, environment and AI architecture."
-              ),
-              
-              h4("3. Risk Assessment"),
-              p(
-                "Complete the 25 questions and record optional notes or rationale."
-              )
+            tags$li(
+              strong("Overview — "),
+              "understand the tool and when it should be used."
             ),
             
-            column(
-              6,
-              
-              h4("4. Results"),
-              p(
-                "Review risk scores, key concerns, escalation conditions and assurance actions."
-              ),
-              
-              h4("5. References"),
-              p(
-                "View the supporting documents, application version and review dates."
-              )
+            tags$li(
+              strong("AI & Model Profile — "),
+              "register, describe and save your use case."
+            ),
+            
+            tags$li(
+              strong("Risk Assessment — "),
+              "complete the 25-question assessment."
+            ),
+            
+            tags$li(
+              strong("Results — "),
+              "review the risk rating and assurance actions."
+            ),
+            
+            tags$li(
+              strong("References — "),
+              "view supporting documents and provide feedback."
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
@@ -1254,41 +1034,34 @@ ui <- page_navbar(
         
         card_body(
           
-          p(
-            paste(
-              "Consider completing AI RiskCheck when developing, piloting,",
-              "using or materially changing an AI-enabled analytical process."
-            )
-          ),
-          
           tags$ul(
             
             tags$li(
-              "Generating, explaining or assisting with analytical code"
+              "Generating or assisting with analytical code"
             ),
             
             tags$li(
-              "Producing analytical commentary, reports or deliverables"
+              "Creating analytical commentary or deliverables"
             ),
             
             tags$li(
-              "Summarising evidence, research or documents"
+              "Summarising evidence or research"
             ),
             
             tags$li(
-              "Analysing, classifying or extracting information from data"
+              "Analysing or classifying data"
             ),
             
             tags$li(
-              "Generating statistics, calculations or quantitative outputs"
+              "Generating quantitative outputs"
             ),
             
             tags$li(
-              "Supporting analytical, policy or operational decisions"
+              "Supporting policy or operational decisions"
             ),
             
             tags$li(
-              "Automating analytical processes or workflows"
+              "Automating analytical workflows"
             ),
             
             tags$li(
@@ -1296,23 +1069,13 @@ ui <- page_navbar(
             ),
             
             tags$li(
-              "Moving from prototype or pilot into operational use"
+              "Moving AI from prototype to operational use"
             )
-          ),
-          
-          div(
             
-            class = "alert alert-warning",
-            
-            strong("Reassess when: "),
-            
-            paste(
-              "the model, prompt, data source, intended use or user group changes;",
-              "AI is given more autonomy; the system moves lifecycle stage;",
-              "or a material incident or new risk is identified."
-            )
           )
+          
         )
+        
       ),
       
       br(),
@@ -1327,13 +1090,14 @@ ui <- page_navbar(
         card_body(
           
           p(
-            "The 25 questions cover eight assessment areas:"
+            "The assessment contains 25 questions across eight areas:"
           ),
           
           fluidRow(
             
             column(
-              6,
+              
+              width = 6,
               
               tags$ul(
                 tags$li("Purpose, value & appropriateness"),
@@ -1341,10 +1105,12 @@ ui <- page_navbar(
                 tags$li("Data, privacy & legal"),
                 tags$li("Quality, testing & reliability")
               )
+              
             ),
             
             column(
-              6,
+              
+              width = 6,
               
               tags$ul(
                 tags$li("Fairness, transparency & stakeholders"),
@@ -1352,18 +1118,24 @@ ui <- page_navbar(
                 tags$li("Governance, accountability & skills"),
                 tags$li("Lifecycle, monitoring & scale")
               )
+              
             )
+            
           )
+          
         )
+        
       ),
       
       br()
+      
     )
+    
   ),
   
   
   # ==========================================================
-  # AI & MODEL PROFILE
+  # TAB 2 - AI & MODEL PROFILE
   # ==========================================================
   
   nav_panel(
@@ -1376,13 +1148,133 @@ ui <- page_navbar(
       
       h2("AI & Model Profile"),
       
-      p(
-        paste(
-          "Provide contextual information about the AI use case.",
-          "These fields do not directly form part of the 25-question score."
+      
+      # ======================================================
+      # REGISTER / SAVE / RESUME
+      # ======================================================
+      
+      card(
+        
+        class = "save-card mb-4",
+        
+        card_header(
+          h3("Register, save or resume your AI use case")
+        ),
+        
+        card_body(
+          
+          p(
+            paste(
+              "Each assessment should have a Use Case ID.",
+              "You can save your work and return to it later."
+            )
+          ),
+          
+          
+          fluidRow(
+            
+            column(
+              
+              width = 6,
+              
+              textInput(
+                "use_case_id",
+                "Use Case ID",
+                placeholder = "e.g. AIR-2026-0001"
+              )
+              
+            ),
+            
+            column(
+              
+              width = 6,
+              
+              textInput(
+                "assessment_owner",
+                "Assessment owner / team",
+                placeholder = "e.g. Teacher Analysis Division"
+              )
+              
+            )
+            
+          ),
+          
+          
+          fluidRow(
+            
+            column(
+              
+              width = 4,
+              
+              actionButton(
+                "generate_case_id",
+                "Generate Use Case ID",
+                class = "btn btn-outline-primary"
+              )
+              
+            ),
+            
+            column(
+              
+              width = 4,
+              
+              actionButton(
+                "save_case",
+                "Save work",
+                class = "btn btn-primary"
+              )
+              
+            ),
+            
+            column(
+              
+              width = 4,
+              
+              actionButton(
+                "refresh_saved_cases",
+                "Refresh saved cases",
+                class = "btn btn-outline-secondary"
+              )
+              
+            )
+            
+          ),
+          
+          br(),
+          
+          
+          div(
+            
+            class = "use-case-id-box",
+            
+            selectInput(
+              "saved_case_select",
+              "Resume a saved assessment",
+              choices = character(0)
+            ),
+            
+            actionButton(
+              "load_case",
+              "Load selected assessment",
+              class = "btn btn-success"
+            )
+            
+          ),
+          
+          br(),
+          
+          uiOutput(
+            "save_status"
+          )
+          
         )
+        
       ),
       
+      
+      # ======================================================
+      # ABOUT USE CASE
+      # ======================================================
       
       card(
         
@@ -1394,25 +1286,21 @@ ui <- page_navbar(
           
           textInput(
             "project_name",
-            "Project / use case name",
-            placeholder = "e.g. AI-assisted publication QA"
+            "Project / use case name"
           ),
           
           textAreaInput(
             "project_description",
             "Describe how AI is being used",
             rows = 5,
-            placeholder = paste(
-              "Describe the problem, how AI is used, what it produces",
-              "and how the output will be used."
-            )
+            width = "100%"
           ),
           
           checkboxGroupInput(
             
             "ai_uses",
             
-            "How is AI being used in this project?",
+            "How is AI being used?",
             
             choices = c(
               "Generating or assisting with code",
@@ -1426,16 +1314,22 @@ ui <- page_navbar(
               "Interacting with other systems or tools",
               "Other"
             )
+            
           ),
+          
           
           fluidRow(
             
             column(
-              6,
+              
+              width = 6,
               
               selectInput(
+                
                 "lifecycle",
+                
                 "Lifecycle stage",
+                
                 choices = c(
                   "Exploring",
                   "Prototype",
@@ -1443,15 +1337,21 @@ ui <- page_navbar(
                   "Operational",
                   "Scaled operational service"
                 )
+                
               )
+              
             ),
             
             column(
-              6,
+              
+              width = 6,
               
               selectInput(
+                
                 "audience",
+                
                 "Who uses or may be affected by the output?",
+                
                 choices = c(
                   "Individual analyst",
                   "Analytical team",
@@ -1462,14 +1362,23 @@ ui <- page_navbar(
                   "Public",
                   "Identifiable individuals"
                 )
+                
               )
+              
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
+      
+      # ======================================================
+      # AI TECHNOLOGY
+      # ======================================================
       
       card(
         
@@ -1480,8 +1389,11 @@ ui <- page_navbar(
         card_body(
           
           selectInput(
+            
             "ai_type",
+            
             "What type of AI is being used?",
+            
             choices = c(
               "Generative AI / LLM",
               "LLM with RAG",
@@ -1492,11 +1404,16 @@ ui <- page_navbar(
               "Recommendation system",
               "Other"
             )
+            
           ),
           
+          
           selectInput(
+            
             "environment",
-            "What type of AI environment is being used?",
+            
+            "AI environment",
+            
             choices = c(
               "DfE-controlled environment",
               "Other government-controlled environment",
@@ -1506,11 +1423,16 @@ ui <- page_navbar(
               "Public AI service",
               "Unknown"
             )
+            
           ),
           
+          
           selectInput(
+            
             "provider",
+            
             "Model / AI provider",
+            
             choices = c(
               "DfE internal service",
               "Microsoft / Azure OpenAI",
@@ -1524,23 +1446,27 @@ ui <- page_navbar(
               "Other",
               "Unknown"
             )
+            
           ),
+          
           
           textInput(
             "model_name",
-            "Model name",
-            placeholder = "e.g. Claude, GPT, Gemini, Llama"
+            "Model name"
           ),
           
           textInput(
             "model_version",
-            "Model version",
-            placeholder = "Enter version if known"
+            "Model version"
           ),
           
+          
           selectInput(
+            
             "hosting",
+            
             "Where is the model hosted?",
+            
             choices = c(
               "DfE-managed environment",
               "Approved government cloud environment",
@@ -1549,11 +1475,16 @@ ui <- page_navbar(
               "Public web service",
               "Unknown"
             )
+            
           ),
           
+          
           selectInput(
+            
             "access_method",
+            
             "How is the AI accessed?",
+            
             choices = c(
               "DfE application",
               "Databricks",
@@ -1563,19 +1494,26 @@ ui <- page_navbar(
               "Embedded within another product",
               "Other"
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
       
+      # ======================================================
+      # LLM
+      # ======================================================
+      
       conditionalPanel(
         
         condition = "
-          input.ai_type == 'Generative AI / LLM' ||
-          input.ai_type == 'LLM with RAG' ||
-          input.ai_type == 'AI agent / tool-using LLM'
+        input.ai_type == 'Generative AI / LLM' ||
+        input.ai_type == 'LLM with RAG' ||
+        input.ai_type == 'AI agent / tool-using LLM'
         ",
         
         card(
@@ -1621,18 +1559,25 @@ ui <- page_navbar(
                 "Unknown"
               )
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
       
+      # ======================================================
+      # RAG
+      # ======================================================
+      
       conditionalPanel(
         
         condition = "
-          input.ai_type == 'LLM with RAG' ||
-          input.ai_type == 'AI agent / tool-using LLM'
+        input.ai_type == 'LLM with RAG' ||
+        input.ai_type == 'AI agent / tool-using LLM'
         ",
         
         card(
@@ -1667,7 +1612,7 @@ ui <- page_navbar(
             
             selectInput(
               "prompt_injection_testing",
-              "Has prompt-injection or malicious-document behaviour been tested?",
+              "Has prompt-injection behaviour been tested?",
               choices = c(
                 "Yes",
                 "Partly",
@@ -1675,12 +1620,19 @@ ui <- page_navbar(
                 "Unknown"
               )
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
+      
+      # ======================================================
+      # AGENT
+      # ======================================================
       
       conditionalPanel(
         
@@ -1716,17 +1668,22 @@ ui <- page_navbar(
                 "Unknown"
               )
             )
+            
           )
+          
         )
+        
       ),
       
       br()
+      
     )
+    
   ),
   
   
   # ==========================================================
-  # RISK ASSESSMENT
+  # TAB 3 - RISK ASSESSMENT
   # ==========================================================
   
   nav_panel(
@@ -1757,23 +1714,20 @@ ui <- page_navbar(
         
         p(
           paste(
-            "Select Not relevant only where a question genuinely does not apply.",
-            "Not relevant responses are excluded from scoring."
+            "Not relevant responses count as completed questions",
+            "but are excluded from scoring."
           )
         ),
         
         p(
           paste(
-            "Use the optional notes field to record context, evidence,",
-            "assumptions or rationale."
+            "Use the notes fields to record evidence,",
+            "context or rationale."
           )
-        ),
-        
-        div(
-          class = "alert alert-light",
-          "Hover over the blue information icon for more information."
         )
+        
       ),
+      
       
       div(
         
@@ -1785,9 +1739,8 @@ ui <- page_navbar(
         
         br(),
         
+        
         card(
-          
-          class = "mb-4",
           
           card_header(
             h3("Anything else we should know?")
@@ -1797,30 +1750,35 @@ ui <- page_navbar(
             
             p(
               paste(
-                "Record additional risks, concerns, assumptions, dependencies",
-                "or context not covered by the 25 questions."
+                "Record any additional risks, assumptions, dependencies",
+                "or issues not covered by the 25 questions."
               )
             ),
             
             textAreaInput(
               "additional_considerations",
               label = NULL,
-              placeholder = paste(
-                "For example: known limitations, unusual dependencies,",
-                "outstanding decisions or additional assurance required."
-              ),
               rows = 6,
-              width = "100%"
+              width = "100%",
+              placeholder = paste(
+                "For example: unusual dependencies, known limitations,",
+                "outstanding decisions or additional assurance needed."
+              )
             )
+            
           )
+          
         )
+        
       )
+      
     )
+    
   ),
   
   
   # ==========================================================
-  # RESULTS
+  # TAB 4 - RESULTS
   # ==========================================================
   
   nav_panel(
@@ -1831,7 +1789,9 @@ ui <- page_navbar(
       
       class = "container-fluid mt-4",
       
-      h2("AI RiskCheck Assessment Results"),
+      h2(
+        "AI RiskCheck Assessment Results"
+      ),
       
       uiOutput(
         "project_heading"
@@ -1839,12 +1799,15 @@ ui <- page_navbar(
       
       br(),
       
+      
       fluidRow(
         
         column(
-          4,
+          
+          width = 4,
           
           card(
+            
             class = "result-card-overall",
             
             card_header(
@@ -1852,22 +1815,37 @@ ui <- page_navbar(
             ),
             
             card_body(
-              uiOutput("risk_badge"),
-              br(),
-              br(),
-              div(
-                class = "result-value",
-                textOutput("residual_score_text")
+              
+              uiOutput(
+                "risk_badge"
               ),
-              p("Residual risk")
+              
+              br(),
+              br(),
+              
+              h3(
+                textOutput(
+                  "residual_score_text"
+                )
+              ),
+              
+              p(
+                "Residual risk"
+              )
+              
             )
+            
           )
+          
         ),
         
+        
         column(
-          4,
+          
+          width = 4,
           
           card(
+            
             class = "result-card-inherent",
             
             card_header(
@@ -1875,17 +1853,36 @@ ui <- page_navbar(
             ),
             
             card_body(
-              h2(textOutput("inherent_label")),
-              h4(textOutput("inherent_score_text")),
-              p("Risk before safeguards are taken into account.")
+              
+              h2(
+                textOutput(
+                  "inherent_label"
+                )
+              ),
+              
+              h4(
+                textOutput(
+                  "inherent_score_text"
+                )
+              ),
+              
+              p(
+                "Risk before existing safeguards are considered."
+              )
+              
             )
+            
           )
+          
         ),
         
+        
         column(
-          4,
+          
+          width = 4,
           
           card(
+            
             class = "result-card-controls",
             
             card_header(
@@ -1893,104 +1890,182 @@ ui <- page_navbar(
             ),
             
             card_body(
-              h2(textOutput("control_label")),
-              h4(textOutput("control_score_text")),
-              p("Strength of safeguards currently in place.")
+              
+              h2(
+                textOutput(
+                  "control_label"
+                )
+              ),
+              
+              h4(
+                textOutput(
+                  "control_score_text"
+                )
+              ),
+              
+              p(
+                "Strength of safeguards currently in place."
+              )
+              
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
       
-      fluidRow(
+      card(
         
-        column(
-          7,
-          
-          card(
-            full_screen = TRUE,
-            card_header("Risk profile"),
-            card_body(
-              plotOutput(
-                "risk_plot",
-                height = "450px"
-              )
-            )
-          )
+        card_header(
+          "Risk profile"
         ),
         
-        column(
-          5,
+        card_body(
           
-          card(
-            card_header("Decision summary"),
-            card_body(
-              uiOutput("decision_summary")
-            )
+          plotOutput(
+            "risk_plot",
+            height = "450px"
           )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("Escalation / stop conditions"),
+        
+        card_header(
+          "Decision summary"
+        ),
+        
         card_body(
-          uiOutput("flag_output")
+          
+          uiOutput(
+            "decision_summary"
+          )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("Key areas requiring attention"),
+        
+        card_header(
+          "Escalation / stop conditions"
+        ),
+        
         card_body(
-          uiOutput("key_risks")
+          
+          uiOutput(
+            "flag_output"
+          )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("Recommended assurance activities"),
+        
+        card_header(
+          "Key areas requiring attention"
+        ),
+        
         card_body(
-          uiOutput("recommendations")
+          
+          uiOutput(
+            "key_risks"
+          )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("Additional considerations recorded by the user"),
+        
+        card_header(
+          "Recommended assurance activities"
+        ),
+        
         card_body(
-          uiOutput("additional_considerations_output")
+          
+          uiOutput(
+            "recommendations"
+          )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("Detailed assessment"),
+        
+        card_header(
+          "Additional considerations"
+        ),
+        
         card_body(
-          DTOutput("risk_table")
+          
+          uiOutput(
+            "additional_considerations_output"
+          )
+          
         )
+        
       ),
       
       br(),
       
       
       card(
-        card_header("AI system profile"),
+        
+        card_header(
+          "Detailed assessment"
+        ),
+        
         card_body(
-          uiOutput("system_profile")
+          
+          DTOutput(
+            "risk_table"
+          )
+          
         )
+        
+      ),
+      
+      br(),
+      
+      
+      card(
+        
+        card_header(
+          "AI system profile"
+        ),
+        
+        card_body(
+          
+          uiOutput(
+            "system_profile"
+          )
+          
+        )
+        
       ),
       
       br(),
@@ -2000,22 +2075,23 @@ ui <- page_navbar(
         "download_assessment",
         "Download AI RiskCheck assessment"
       ),
-      br(),
+            br(),
       downloadButton(
 "download_report",
 "Download HTML report",
 class = "btn-primary"
 ),
-
       
       br(),
       br()
+      
     )
+    
   ),
   
   
   # ==========================================================
-  # REFERENCES
+  # TAB 5 - REFERENCES + FEEDBACK
   # ==========================================================
   
   nav_panel(
@@ -2032,22 +2108,16 @@ class = "btn-primary"
       
       p(
         paste(
-          "The assessment has been developed with reference to",
-          "the following government and National Audit Office documents."
+          "The assessment has been developed using government and",
+          "National Audit Office guidance. You can provide feedback",
+          "at the bottom of this page to help improve future versions."
         )
       ),
       
-      div(
-        class = "alert alert-info",
-        
-        strong("Important: "),
-        
-        paste(
-          "AI RiskCheck summarises themes from these documents for analytical",
-          "self-assessment. Consult the original source where detailed guidance",
-          "or specialist interpretation is required."
-        )
-      ),
+      
+      # ======================================================
+      # APP INFORMATION
+      # ======================================================
       
       card(
         
@@ -2104,30 +2174,412 @@ class = "btn-primary"
                   "Prototype - scoring and thresholds require internal validation"
                 )
               )
+              
             )
+            
           )
+          
         )
+        
       ),
       
       br(),
       
-      h3("Reference documents"),
+      
+      # ======================================================
+      # REFERENCES
+      # ======================================================
+      
+      h3(
+        "Reference documents"
+      ),
       
       uiOutput(
         "reference_cards"
       ),
       
+      br(),
+      
+      
+      # ======================================================
+      # FEEDBACK FORM
+      # ======================================================
+      
+      card(
+        
+        class = "feedback-card mb-4",
+        
+        card_header(
+          h3("Feedback on AI RiskCheck")
+        ),
+        
+        card_body(
+          
+          p(
+            paste(
+              "AI RiskCheck is being developed iteratively.",
+              "Your feedback will help improve the assessment,",
+              "guidance, scoring and user experience."
+            )
+          ),
+          
+          
+          div(
+            
+            class = "alert alert-light",
+            
+            strong(
+              "Please do not include sensitive personal information. "
+            ),
+            
+            paste(
+              "If your feedback relates to a particular assessment,",
+              "you can provide the Use Case ID."
+            )
+            
+          ),
+          
+          
+          fluidRow(
+            
+            column(
+              
+              width = 6,
+              
+              textInput(
+                "feedback_name",
+                "Name or team (optional)",
+                placeholder = "e.g. Teacher Analysis Division"
+              )
+              
+            ),
+            
+            column(
+              
+              width = 6,
+              
+              textInput(
+                "feedback_case_id",
+                "Use Case ID (optional)",
+                placeholder = "e.g. AIR-2026-0001"
+              )
+              
+            )
+            
+          ),
+          
+          
+          selectInput(
+            
+            "feedback_type",
+            
+            "What is your feedback about?",
+            
+            choices = c(
+              "Overall experience",
+              "Risk assessment questions",
+              "Scoring / risk rating",
+              "AI & Model Profile",
+              "Save / resume functionality",
+              "Results and recommendations",
+              "References / guidance",
+              "Accessibility / usability",
+              "Technical issue",
+              "Missing risk or topic",
+              "Other"
+            )
+            
+          ),
+          
+          
+          radioButtons(
+            
+            "feedback_rating",
+            
+            "How useful did you find AI RiskCheck?",
+            
+            choices = c(
+              "Very useful" = "5",
+              "Useful" = "4",
+              "Neither useful nor unhelpful" = "3",
+              "Not very useful" = "2",
+              "Not useful" = "1"
+            ),
+            
+            selected = character(0)
+            
+          ),
+          
+          
+          textAreaInput(
+            
+            "feedback_comments",
+            
+            "Tell us more",
+            
+            placeholder = paste(
+              "What worked well?",
+              "What could be improved?"
+            ),
+            
+            rows = 5,
+            
+            width = "100%"
+            
+          ),
+          
+          
+          textAreaInput(
+            
+            "feedback_missing",
+            
+            "Are there any risks, questions or guidance that you think are missing? (optional)",
+            
+            placeholder = paste(
+              "For example, suggest an additional risk area,",
+              "question or piece of guidance."
+            ),
+            
+            rows = 4,
+            
+            width = "100%"
+            
+          ),
+          
+          
+          actionButton(
+            "submit_feedback",
+            "Submit feedback",
+            class = "btn btn-primary"
+          ),
+          
+          br(),
+          br(),
+          
+          uiOutput(
+            "feedback_status"
+          )
+          
+        )
+        
+      ),
+      
       br()
+      
     )
+    
   )
+  
 )
 
 
 # ============================================================
-# 8. SERVER
+# 9. SERVER
 # ============================================================
 
 server <- function(input, output, session) {
+  
+  
+  # ==========================================================
+  # STATUS MESSAGES
+  # ==========================================================
+  
+  save_message <- reactiveVal(NULL)
+  
+  feedback_message <- reactiveVal(NULL)
+  
+  feedback_message_type <- reactiveVal(
+    "success"
+  )
+  
+  
+  output$save_status <- renderUI({
+    
+    msg <- save_message()
+    
+    if (
+      is.null(msg)
+    ) {
+      return(NULL)
+    }
+    
+    div(
+      class = "alert alert-info",
+      msg
+    )
+    
+  })
+  
+  
+  output$feedback_status <- renderUI({
+    
+    msg <- feedback_message()
+    
+    if (
+      is.null(msg)
+    ) {
+      return(NULL)
+    }
+    
+    class_name <- paste0(
+      "alert alert-",
+      feedback_message_type()
+    )
+    
+    div(
+      class = class_name,
+      msg
+    )
+    
+  })
+  
+  
+  # ==========================================================
+  # SAVED CASE HELPERS
+  # ==========================================================
+  
+  get_saved_cases <- function() {
+    
+    files <- list.files(
+      
+      SAVED_CASE_DIR,
+      
+      pattern = "\\.rds$",
+      
+      full.names = FALSE
+      
+    )
+    
+    
+    if (
+      length(files) == 0
+    ) {
+      
+      return(
+        character(0)
+      )
+      
+    }
+    
+    
+    sort(
+      sub(
+        "\\.rds$",
+        "",
+        files
+      )
+    )
+    
+  }
+  
+  
+  # ==========================================================
+  # GENERATE USE CASE ID
+  # ==========================================================
+  
+  observeEvent(
+    
+    input$generate_case_id,
+    
+    {
+      
+      existing_cases <-
+        get_saved_cases()
+      
+      
+      current_year <-
+        format(
+          Sys.Date(),
+          "%Y"
+        )
+      
+      
+      year_cases <-
+        existing_cases[
+          grepl(
+            paste0(
+              "^AIR-",
+              current_year,
+              "-"
+            ),
+            existing_cases
+          )
+        ]
+      
+      
+      if (
+        length(year_cases) == 0
+      ) {
+        
+        next_number <- 1
+        
+      } else {
+        
+        numbers <- suppressWarnings(
+          
+          as.integer(
+            
+            sub(
+              paste0(
+                "^AIR-",
+                current_year,
+                "-"
+              ),
+              "",
+              year_cases
+            )
+            
+          )
+          
+        )
+        
+        
+        numbers <-
+          numbers[
+            !is.na(numbers)
+          ]
+        
+        
+        if (
+          length(numbers) == 0
+        ) {
+          
+          next_number <- 1
+          
+        } else {
+          
+          next_number <-
+            max(numbers) + 1
+          
+        }
+        
+      }
+      
+      
+      new_id <- sprintf(
+        "AIR-%s-%04d",
+        current_year,
+        next_number
+      )
+      
+      
+      updateTextInput(
+        session,
+        "use_case_id",
+        value = new_id
+      )
+      
+      
+      save_message(
+        paste(
+          "New Use Case ID generated:",
+          new_id
+        )
+      )
+      
+    }
+    
+  )
   
   
   # ==========================================================
@@ -2136,11 +2588,13 @@ server <- function(input, output, session) {
   
   output$questions_ui <- renderUI({
     
-    domains <- unique(
-      questions$domain
-    )
+    domains <-
+      unique(
+        questions$domain
+      )
     
-    question_counter <- 0
+    
+    counter <- 0
     
     
     tagList(
@@ -2151,9 +2605,12 @@ server <- function(input, output, session) {
         
         function(domain_name) {
           
-          domain_questions <- questions %>%
+          
+          domain_questions <-
+            questions %>%
             filter(
-              domain == domain_name
+              domain ==
+                domain_name
             )
           
           
@@ -2166,9 +2623,9 @@ server <- function(input, output, session) {
               div(
                 
                 style = "
-                  display:flex;
-                  justify-content:space-between;
-                  align-items:center;
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
                 ",
                 
                 h3(
@@ -2176,14 +2633,17 @@ server <- function(input, output, session) {
                   domain_name
                 ),
                 
-                tags$span(
+                span(
                   paste0(
                     nrow(domain_questions),
                     " questions"
                   )
                 )
+                
               )
+              
             ),
+            
             
             card_body(
               
@@ -2192,152 +2652,214 @@ server <- function(input, output, session) {
                 map(
                   
                   seq_len(
-                    nrow(domain_questions)
+                    nrow(
+                      domain_questions
+                    )
                   ),
                   
                   function(i) {
                     
-                    question_counter <<-
-                      question_counter + 1
+                    
+                    counter <<-
+                      counter + 1
                     
                     
-                    q <- domain_questions[i, ]
+                    q <-
+                      domain_questions[
+                        i,
+                      ]
                     
                     
-                    choices <- if (
-                      q$type == "risk"
-                    ) {
-                      
-                      risk_options
-                      
-                    } else {
-                      
-                      control_options
-                    }
+                    choices <-
+                      if (
+                        q$type ==
+                        "risk"
+                      ) {
+                        
+                        risk_options
+                        
+                      } else {
+                        
+                        control_options
+                        
+                      }
                     
                     
                     div(
                       
                       class = "mb-4",
                       
+                      
+                      # ========================================
+                      # QUESTION + TOOLTIP
+                      # ========================================
+                      
                       div(
                         
                         style = "
-                          display:flex;
-                          align-items:flex-start;
-                          gap:7px;
-                          margin-bottom:12px;
+                        display:flex;
+                        gap:8px;
+                        align-items:flex-start;
+                        margin-bottom:12px;
                         ",
                         
-                        tags$span(
+                        span(
                           class = "question-number",
-                          question_counter
+                          counter
                         ),
                         
-                        tags$span(
+                        span(
                           class = "question-title",
                           q$question
                         ),
                         
                         bslib::tooltip(
                           
-                          tags$span(
+                          span(
                             class = "ai-info-icon",
                             "i"
                           ),
                           
-                          tags$div(
+                          div(
                             
                             style = "
-                              max-width:400px;
-                              text-align:left;
+                            max-width:400px;
+                            text-align:left;
                             ",
                             
-                            tags$p(
+                            p(
                               q$help_text
                             ),
                             
-                            tags$hr(),
+                            hr(),
                             
-                            tags$p(
-                              tags$strong("Reference: "),
+                            p(
+                              strong(
+                                "Reference: "
+                              ),
                               q$source
                             ),
                             
-                            tags$p(
-                              tags$strong("Relevant principle: "),
+                            p(
+                              strong(
+                                "Relevant principle: "
+                              ),
                               q$principle
                             ),
                             
-                            tags$p(
-                              tags$strong("Recommended action: "),
+                            p(
+                              strong(
+                                "Recommended action: "
+                              ),
                               q$recommended_action
                             )
+                            
                           ),
                           
                           placement = "right"
+                          
                         )
+                        
                       ),
                       
                       
                       radioButtons(
                         
-                        inputId = q$id,
+                        inputId =
+                          q$id,
                         
-                        label = NULL,
+                        label =
+                          NULL,
                         
-                        choices = choices,
+                        choices =
+                          choices,
                         
-                        selected = character(0)
+                        selected =
+                          character(0)
+                        
                       ),
                       
                       
-                      tags$div(
+                      div(
                         class = "notes-label",
                         "Optional notes / rationale"
                       ),
                       
+                      
                       textAreaInput(
                         
-                        inputId = paste0(
-                          q$id,
-                          "_notes"
-                        ),
+                        inputId =
+                          paste0(
+                            q$id,
+                            "_notes"
+                          ),
                         
-                        label = NULL,
+                        label =
+                          NULL,
                         
-                        placeholder = paste(
-                          "Add context, evidence, assumptions or explain",
-                          "why you selected Not relevant."
-                        ),
+                        rows =
+                          2,
                         
-                        rows = 2,
+                        width =
+                          "100%",
                         
-                        width = "100%"
+                        placeholder =
+                          paste(
+                            "Add context, evidence, assumptions or",
+                            "explain why you selected Not relevant."
+                          )
+                        
                       ),
                       
                       hr()
+                      
                     )
+                    
                   }
+                  
                 )
+                
               )
+              
             )
+            
           )
+          
         }
+        
       )
+      
     )
+    
   })
   
   
+  # Ensure the assessment inputs exist even before the
+  # user first opens the Risk Assessment tab.
+  # This improves save/resume behaviour.
+  
+  outputOptions(
+    output,
+    "questions_ui",
+    suspendWhenHidden = FALSE
+  )
+  
+  
   # ==========================================================
-  # ANSWERS
+  # COLLECT ANSWERS
   # ==========================================================
   
   answers <- reactive({
     
+    
     questions %>%
       
       mutate(
+        
+        
+        # --------------------------------------
+        # RAW RESPONSE
+        # --------------------------------------
         
         raw_response = map_chr(
           
@@ -2345,38 +2867,53 @@ server <- function(input, output, session) {
           
           function(question_id) {
             
-            value <- input[[question_id]]
+            
+            value <-
+              input[[question_id]]
+            
             
             if (
               is.null(value) ||
               length(value) == 0 ||
-              identical(value, "")
+              identical(
+                value,
+                ""
+              )
             ) {
               
               return(
                 NA_character_
               )
+              
             }
+            
             
             as.character(
               value
             )
+            
           }
+          
         ),
         
         
-        not_relevant = case_when(
-          
-          is.na(raw_response) ~
-            FALSE,
-          
-          raw_response == "NR" ~
-            TRUE,
-          
-          TRUE ~
-            FALSE
-        ),
+        # --------------------------------------
+        # NOT RELEVANT
+        # --------------------------------------
         
+        not_relevant =
+          
+          !is.na(
+            raw_response
+          ) &
+          
+          raw_response ==
+          "NR",
+        
+        
+        # --------------------------------------
+        # NUMERIC RESPONSE
+        # --------------------------------------
         
         response = map_dbl(
           
@@ -2384,22 +2921,32 @@ server <- function(input, output, session) {
           
           function(value) {
             
+            
             if (
               is.na(value) ||
-              value == "NR"
+              value ==
+              "NR"
             ) {
               
               return(
                 NA_real_
               )
+              
             }
+            
             
             as.numeric(
               value
             )
+            
           }
+          
         ),
         
+        
+        # --------------------------------------
+        # NOTES
+        # --------------------------------------
         
         notes = map_chr(
           
@@ -2407,98 +2954,45 @@ server <- function(input, output, session) {
           
           function(question_id) {
             
-            note_value <-
+            
+            value <-
               input[[paste0(
                 question_id,
                 "_notes"
               )]]
             
+            
             if (
-              is.null(note_value) ||
-              length(note_value) == 0 ||
-              identical(note_value, "")
+              is.null(value) ||
+              length(value) == 0 ||
+              identical(
+                value,
+                ""
+              )
             ) {
               
-              return("")
+              return(
+                ""
+              )
+              
             }
             
+            
             as.character(
-              note_value
+              value
             )
+            
           }
+          
         )
+        
       )
+    
   })
   
   
   # ==========================================================
-  # PROGRESS
-  # ==========================================================
-  
-  completed_questions <- reactive({
-    
-    sum(
-      !is.na(
-        answers()$raw_response
-      )
-    )
-  })
-  
-  
-  assessment_complete <- reactive({
-    
-    completed_questions() ==
-      TOTAL_ASSESSMENT_QUESTIONS
-  })
-  
-  
-  output$progress_text <- renderText({
-    
-    paste0(
-      completed_questions(),
-      " of ",
-      TOTAL_ASSESSMENT_QUESTIONS,
-      " questions completed"
-    )
-  })
-  
-  
-  output$progress_bar <- renderUI({
-    
-    percentage <- round(
-      100 *
-        completed_questions() /
-        TOTAL_ASSESSMENT_QUESTIONS
-    )
-    
-    
-    div(
-      
-      class = "progress",
-      
-      div(
-        
-        class = "progress-bar",
-        
-        role = "progressbar",
-        
-        style = paste0(
-          "width:",
-          percentage,
-          "%"
-        ),
-        
-        paste0(
-          percentage,
-          "%"
-        )
-      )
-    )
-  })
-  
-  
-  # ==========================================================
-  # RESPONSE LABELS
+  # RESPONSE LABEL FUNCTION
   # ==========================================================
   
   response_label <- function(
@@ -2506,33 +3000,41 @@ server <- function(input, output, session) {
     raw_response
   ) {
     
+    
     if (
-      is.na(raw_response)
+      is.na(
+        raw_response
+      )
     ) {
       
       return(
         "Not answered"
       )
+      
     }
     
     
     if (
-      raw_response == "NR"
+      raw_response ==
+      "NR"
     ) {
       
       return(
         "Not relevant"
       )
+      
     }
     
     
-    response <- as.numeric(
-      raw_response
-    )
+    value <-
+      as.numeric(
+        raw_response
+      )
     
     
     if (
-      type == "risk"
+      type ==
+      "risk"
     ) {
       
       labels <- c(
@@ -2552,20 +3054,711 @@ server <- function(input, output, session) {
         "Mostly yes",
         "Yes"
       )
+      
     }
     
     
     labels[
-      response + 1
+      value + 1
     ]
+    
   }
   
   
   # ==========================================================
-  # SCORING
+  # SAVED CASE OBJECT
+  # ==========================================================
+  
+  case_data <- reactive({
+    
+    
+    list(
+      
+      use_case_id =
+        input$use_case_id,
+      
+      assessment_owner =
+        input$assessment_owner,
+      
+      saved_date =
+        as.character(
+          Sys.time()
+        ),
+      
+      project_name =
+        input$project_name,
+      
+      project_description =
+        input$project_description,
+      
+      ai_uses =
+        input$ai_uses,
+      
+      lifecycle =
+        input$lifecycle,
+      
+      audience =
+        input$audience,
+      
+      ai_type =
+        input$ai_type,
+      
+      environment =
+        input$environment,
+      
+      provider =
+        input$provider,
+      
+      model_name =
+        input$model_name,
+      
+      model_version =
+        input$model_version,
+      
+      hosting =
+        input$hosting,
+      
+      access_method =
+        input$access_method,
+      
+      monthly_tokens =
+        input$monthly_tokens,
+      
+      monthly_cost =
+        input$monthly_cost,
+      
+      usage_monitoring =
+        input$usage_monitoring,
+      
+      usage_limits =
+        input$usage_limits,
+      
+      rag_external =
+        input$rag_external,
+      
+      rag_permissions =
+        input$rag_permissions,
+      
+      prompt_injection_testing =
+        input$prompt_injection_testing,
+      
+      agent_actions =
+        input$agent_actions,
+      
+      agent_permissions =
+        input$agent_permissions,
+      
+      answers =
+        answers(),
+      
+      additional_considerations =
+        input$additional_considerations
+      
+    )
+    
+  })
+  
+  
+  # ==========================================================
+  # SAVE CASE
+  # ==========================================================
+  
+  observeEvent(
+    
+    input$save_case,
+    
+    {
+      
+      
+      case_id <-
+        trimws(
+          input$use_case_id
+        )
+      
+      
+      if (
+        is.null(case_id) ||
+        case_id ==
+        ""
+      ) {
+        
+        save_message(
+          "Please enter or generate a Use Case ID before saving."
+        )
+        
+        return()
+        
+      }
+      
+      
+      safe_id <-
+        gsub(
+          "[^A-Za-z0-9_-]",
+          "_",
+          case_id
+        )
+      
+      
+      save_path <-
+        file.path(
+          SAVED_CASE_DIR,
+          paste0(
+            safe_id,
+            ".rds"
+          )
+        )
+      
+      
+      saveRDS(
+        case_data(),
+        save_path
+      )
+      
+      
+      updateSelectInput(
+        session,
+        "saved_case_select",
+        choices = get_saved_cases(),
+        selected = safe_id
+      )
+      
+      
+      save_message(
+        paste(
+          "Assessment saved successfully.",
+          "Use Case ID:",
+          case_id
+        )
+      )
+      
+    }
+    
+  )
+  
+  
+  # ==========================================================
+  # REFRESH SAVED CASES
+  # ==========================================================
+  
+  observe({
+    
+    updateSelectInput(
+      session,
+      "saved_case_select",
+      choices =
+        get_saved_cases()
+    )
+    
+  })
+  
+  
+  observeEvent(
+    
+    input$refresh_saved_cases,
+    
+    {
+      
+      updateSelectInput(
+        session,
+        "saved_case_select",
+        choices =
+          get_saved_cases()
+      )
+      
+      save_message(
+        "Saved assessment list refreshed."
+      )
+      
+    }
+    
+  )
+  
+  
+  # ==========================================================
+  # LOAD SAVED CASE
+  # ==========================================================
+  
+  observeEvent(
+    
+    input$load_case,
+    
+    {
+      
+      
+      req(
+        input$saved_case_select
+      )
+      
+      
+      save_path <-
+        file.path(
+          SAVED_CASE_DIR,
+          paste0(
+            input$saved_case_select,
+            ".rds"
+          )
+        )
+      
+      
+      if (
+        !file.exists(
+          save_path
+        )
+      ) {
+        
+        save_message(
+          "Saved assessment could not be found."
+        )
+        
+        return()
+        
+      }
+      
+      
+      saved <-
+        readRDS(
+          save_path
+        )
+      
+      
+      # ----------------------------------------
+      # MAIN PROFILE
+      # ----------------------------------------
+      
+      updateTextInput(
+        session,
+        "use_case_id",
+        value =
+          saved$use_case_id
+      )
+      
+      updateTextInput(
+        session,
+        "assessment_owner",
+        value =
+          saved$assessment_owner
+      )
+      
+      updateTextInput(
+        session,
+        "project_name",
+        value =
+          saved$project_name
+      )
+      
+      updateTextAreaInput(
+        session,
+        "project_description",
+        value =
+          saved$project_description
+      )
+      
+      updateCheckboxGroupInput(
+        session,
+        "ai_uses",
+        selected =
+          saved$ai_uses
+      )
+      
+      updateSelectInput(
+        session,
+        "lifecycle",
+        selected =
+          saved$lifecycle
+      )
+      
+      updateSelectInput(
+        session,
+        "audience",
+        selected =
+          saved$audience
+      )
+      
+      
+      # ----------------------------------------
+      # TECHNOLOGY
+      # ----------------------------------------
+      
+      updateSelectInput(
+        session,
+        "ai_type",
+        selected =
+          saved$ai_type
+      )
+      
+      updateSelectInput(
+        session,
+        "environment",
+        selected =
+          saved$environment
+      )
+      
+      updateSelectInput(
+        session,
+        "provider",
+        selected =
+          saved$provider
+      )
+      
+      updateTextInput(
+        session,
+        "model_name",
+        value =
+          saved$model_name
+      )
+      
+      updateTextInput(
+        session,
+        "model_version",
+        value =
+          saved$model_version
+      )
+      
+      updateSelectInput(
+        session,
+        "hosting",
+        selected =
+          saved$hosting
+      )
+      
+      updateSelectInput(
+        session,
+        "access_method",
+        selected =
+          saved$access_method
+      )
+      
+      
+      # ----------------------------------------
+      # LLM
+      # ----------------------------------------
+      
+      if (
+        !is.null(
+          saved$monthly_tokens
+        )
+      ) {
+        
+        updateNumericInput(
+          session,
+          "monthly_tokens",
+          value =
+            saved$monthly_tokens
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$monthly_cost
+        )
+      ) {
+        
+        updateNumericInput(
+          session,
+          "monthly_cost",
+          value =
+            saved$monthly_cost
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$usage_monitoring
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "usage_monitoring",
+          selected =
+            saved$usage_monitoring
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$usage_limits
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "usage_limits",
+          selected =
+            saved$usage_limits
+        )
+        
+      }
+      
+      
+      # ----------------------------------------
+      # RAG
+      # ----------------------------------------
+      
+      if (
+        !is.null(
+          saved$rag_external
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "rag_external",
+          selected =
+            saved$rag_external
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$rag_permissions
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "rag_permissions",
+          selected =
+            saved$rag_permissions
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$prompt_injection_testing
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "prompt_injection_testing",
+          selected =
+            saved$prompt_injection_testing
+        )
+        
+      }
+      
+      
+      # ----------------------------------------
+      # AGENT
+      # ----------------------------------------
+      
+      if (
+        !is.null(
+          saved$agent_actions
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "agent_actions",
+          selected =
+            saved$agent_actions
+        )
+        
+      }
+      
+      
+      if (
+        !is.null(
+          saved$agent_permissions
+        )
+      ) {
+        
+        updateSelectInput(
+          session,
+          "agent_permissions",
+          selected =
+            saved$agent_permissions
+        )
+        
+      }
+      
+      
+      # ----------------------------------------
+      # 25 QUESTIONS
+      # ----------------------------------------
+      
+      if (
+        !is.null(
+          saved$answers
+        )
+      ) {
+        
+        
+        for (
+          i in seq_len(
+            nrow(
+              saved$answers
+            )
+          )
+        ) {
+          
+          
+          question_id <-
+            saved$answers$id[i]
+          
+          
+          answer_value <-
+            saved$answers$raw_response[i]
+          
+          
+          note_value <-
+            saved$answers$notes[i]
+          
+          
+          if (
+            !is.na(
+              answer_value
+            )
+          ) {
+            
+            updateRadioButtons(
+              session,
+              question_id,
+              selected =
+                answer_value
+            )
+            
+          }
+          
+          
+          updateTextAreaInput(
+            session,
+            paste0(
+              question_id,
+              "_notes"
+            ),
+            value =
+              note_value
+          )
+          
+        }
+        
+      }
+      
+      
+      # ----------------------------------------
+      # ADDITIONAL COMMENTS
+      # ----------------------------------------
+      
+      if (
+        !is.null(
+          saved$additional_considerations
+        )
+      ) {
+        
+        updateTextAreaInput(
+          session,
+          "additional_considerations",
+          value =
+            saved$additional_considerations
+        )
+        
+      }
+      
+      
+      save_message(
+        paste(
+          "Assessment loaded successfully.",
+          "Use Case ID:",
+          saved$use_case_id
+        )
+      )
+      
+    }
+    
+  )
+  
+  
+  # ==========================================================
+  # PROGRESS
+  # ==========================================================
+  
+  completed_questions <- reactive({
+    
+    sum(
+      !is.na(
+        answers()$raw_response
+      )
+    )
+    
+  })
+  
+  
+  assessment_complete <- reactive({
+    
+    completed_questions() ==
+      TOTAL_ASSESSMENT_QUESTIONS
+    
+  })
+  
+  
+  output$progress_text <- renderText({
+    
+    paste0(
+      completed_questions(),
+      " of ",
+      TOTAL_ASSESSMENT_QUESTIONS,
+      " questions completed"
+    )
+    
+  })
+  
+  
+  output$progress_bar <- renderUI({
+    
+    
+    percent <-
+      round(
+        100 *
+          completed_questions() /
+          TOTAL_ASSESSMENT_QUESTIONS
+      )
+    
+    
+    div(
+      
+      class = "progress",
+      
+      div(
+        
+        class = "progress-bar",
+        
+        style = paste0(
+          "width:",
+          percent,
+          "%"
+        ),
+        
+        paste0(
+          percent,
+          "%"
+        )
+        
+      )
+      
+    )
+    
+  })
+  
+  
+  # ==========================================================
+  # SCORE ANSWERS
   # ==========================================================
   
   scored_answers <- reactive({
+    
     
     answers() %>%
       
@@ -2576,14 +3769,17 @@ server <- function(input, output, session) {
           not_relevant ~
             NA_real_,
           
-          type == "risk" ~
+          type ==
+            "risk" ~
             response,
           
-          type == "control" ~
+          type ==
+            "control" ~
             4 - response,
           
           TRUE ~
             NA_real_
+          
         ),
         
         
@@ -2594,7 +3790,9 @@ server <- function(input, output, session) {
         
         maximum_score =
           if_else(
-            is.na(adjusted_score),
+            is.na(
+              adjusted_score
+            ),
             NA_real_,
             4 * weight
           ),
@@ -2610,10 +3808,13 @@ server <- function(input, output, session) {
         
         concern = case_when(
           
-          raw_response == "NR" ~
+          raw_response ==
+            "NR" ~
             "Not relevant",
           
-          is.na(raw_response) ~
+          is.na(
+            raw_response
+          ) ~
             "Not answered",
           
           adjusted_score >= 4 ~
@@ -2630,8 +3831,11 @@ server <- function(input, output, session) {
           
           TRUE ~
             "No concern"
+          
         )
+        
       )
+    
   })
   
   
@@ -2641,19 +3845,28 @@ server <- function(input, output, session) {
   
   inherent_score <- reactive({
     
-    dat <- answers() %>%
+    
+    dat <-
+      answers() %>%
       
       filter(
-        type == "risk",
-        !is.na(response)
+        type ==
+          "risk",
+        !is.na(
+          response
+        )
       )
     
     
     if (
-      nrow(dat) == 0
+      nrow(dat) ==
+      0
     ) {
       
-      return(0)
+      return(
+        0
+      )
+      
     }
     
     
@@ -2668,6 +3881,7 @@ server <- function(input, output, session) {
         4 *
           dat$weight
       )
+    
   })
   
   
@@ -2677,19 +3891,28 @@ server <- function(input, output, session) {
   
   control_score <- reactive({
     
-    dat <- answers() %>%
+    
+    dat <-
+      answers() %>%
       
       filter(
-        type == "control",
-        !is.na(response)
+        type ==
+          "control",
+        !is.na(
+          response
+        )
       )
     
     
     if (
-      nrow(dat) == 0
+      nrow(dat) ==
+      0
     ) {
       
-      return(0)
+      return(
+        0
+      )
+      
     }
     
     
@@ -2704,14 +3927,16 @@ server <- function(input, output, session) {
         4 *
           dat$weight
       )
+    
   })
   
   
   # ==========================================================
-  # ESCALATION FLAGS
+  # ESCALATION / STOP RULES
   # ==========================================================
   
   flags <- reactive({
+    
     
     result <- tibble(
       severity = character(),
@@ -2724,25 +3949,42 @@ server <- function(input, output, session) {
     issue
     ) {
       
-      result <<- bind_rows(
-        
-        result,
-        
-        tibble(
-          severity = severity,
-          issue = issue
+      result <<-
+        bind_rows(
+          
+          result,
+          
+          tibble(
+            severity =
+              severity,
+            issue =
+              issue
+          )
+          
         )
-      )
+      
     }
     
     
+    # High consequential impact + weak human review
+    
     if (
-      !is.null(input$impact_2) &&
-      input$impact_2 != "NR" &&
-      !is.null(input$human_1) &&
-      input$human_1 != "NR" &&
-      as.numeric(input$impact_2) >= 4 &&
-      as.numeric(input$human_1) <= 1
+      !is.null(
+        input$impact_2
+      ) &&
+      input$impact_2 !=
+      "NR" &&
+      !is.null(
+        input$human_1
+      ) &&
+      input$human_1 !=
+      "NR" &&
+      as.numeric(
+        input$impact_2
+      ) >= 4 &&
+      as.numeric(
+        input$human_1
+      ) <= 1
     ) {
       
       add_flag(
@@ -2752,13 +3994,21 @@ server <- function(input, output, session) {
           "without sufficient meaningful human review."
         )
       )
+      
     }
     
     
+    # Autonomous consequential action
+    
     if (
-      !is.null(input$impact_3) &&
-      input$impact_3 != "NR" &&
-      as.numeric(input$impact_3) >= 4
+      !is.null(
+        input$impact_3
+      ) &&
+      input$impact_3 !=
+      "NR" &&
+      as.numeric(
+        input$impact_3
+      ) >= 4
     ) {
       
       add_flag(
@@ -2768,16 +4018,29 @@ server <- function(input, output, session) {
           "without human approval."
         )
       )
+      
     }
     
     
+    # Sensitive data + weak approved environment
+    
     if (
-      !is.null(input$data_2) &&
-      input$data_2 != "NR" &&
-      !is.null(input$security_1) &&
-      input$security_1 != "NR" &&
-      as.numeric(input$data_2) >= 3 &&
-      as.numeric(input$security_1) <= 1
+      !is.null(
+        input$data_2
+      ) &&
+      input$data_2 !=
+      "NR" &&
+      !is.null(
+        input$security_1
+      ) &&
+      input$security_1 !=
+      "NR" &&
+      as.numeric(
+        input$data_2
+      ) >= 3 &&
+      as.numeric(
+        input$security_1
+      ) <= 1
     ) {
       
       add_flag(
@@ -2787,51 +4050,85 @@ server <- function(input, output, session) {
           "insufficiently approved AI environment."
         )
       )
+      
     }
     
     
+    # High impact + weak testing
+    
     if (
-      !is.null(input$impact_1) &&
-      input$impact_1 != "NR" &&
-      !is.null(input$quality_1) &&
-      input$quality_1 != "NR" &&
-      as.numeric(input$impact_1) >= 3 &&
-      as.numeric(input$quality_1) <= 1
+      !is.null(
+        input$impact_1
+      ) &&
+      input$impact_1 !=
+      "NR" &&
+      !is.null(
+        input$quality_1
+      ) &&
+      input$quality_1 !=
+      "NR" &&
+      as.numeric(
+        input$impact_1
+      ) >= 3 &&
+      as.numeric(
+        input$quality_1
+      ) <= 1
     ) {
       
       add_flag(
         "ESCALATE",
         paste(
-          "A high-impact AI use case does not currently have",
+          "A high-impact use case does not currently have",
           "sufficient representative testing."
         )
       )
+      
     }
     
     
+    # High impact + weak verification
+    
     if (
-      !is.null(input$impact_1) &&
-      input$impact_1 != "NR" &&
-      !is.null(input$quality_2) &&
-      input$quality_2 != "NR" &&
-      as.numeric(input$impact_1) >= 3 &&
-      as.numeric(input$quality_2) <= 1
+      !is.null(
+        input$impact_1
+      ) &&
+      input$impact_1 !=
+      "NR" &&
+      !is.null(
+        input$quality_2
+      ) &&
+      input$quality_2 !=
+      "NR" &&
+      as.numeric(
+        input$impact_1
+      ) >= 3 &&
+      as.numeric(
+        input$quality_2
+      ) <= 1
     ) {
       
       add_flag(
         "ESCALATE",
         paste(
-          "A high-impact AI use case does not currently have",
+          "A high-impact use case does not currently have",
           "sufficient independent verification of AI outputs."
         )
       )
+      
     }
     
     
+    # Fairness
+    
     if (
-      !is.null(input$ethics_1) &&
-      input$ethics_1 != "NR" &&
-      as.numeric(input$ethics_1) >= 3
+      !is.null(
+        input$ethics_1
+      ) &&
+      input$ethics_1 !=
+      "NR" &&
+      as.numeric(
+        input$ethics_1
+      ) >= 3
     ) {
       
       add_flag(
@@ -2841,13 +4138,21 @@ server <- function(input, output, session) {
           "or differential-impact risks."
         )
       )
+      
     }
     
     
+    # Governance
+    
     if (
-      !is.null(input$governance_1) &&
-      input$governance_1 != "NR" &&
-      as.numeric(input$governance_1) <= 1
+      !is.null(
+        input$governance_1
+      ) &&
+      input$governance_1 !=
+      "NR" &&
+      as.numeric(
+        input$governance_1
+      ) <= 1
     ) {
       
       add_flag(
@@ -2857,11 +4162,16 @@ server <- function(input, output, session) {
           "are currently insufficient."
         )
       )
+      
     }
     
     
+    # Agent autonomy
+    
     if (
-      !is.null(input$agent_actions) &&
+      !is.null(
+        input$agent_actions
+      ) &&
       input$agent_actions ==
       "Yes - autonomously"
     ) {
@@ -2873,12 +4183,14 @@ server <- function(input, output, session) {
           "can execute actions autonomously."
         )
       )
+      
     }
     
     
     distinct(
       result
     )
+    
   })
   
   
@@ -2888,11 +4200,19 @@ server <- function(input, output, session) {
   
   residual_score <- reactive({
     
-    inherent <- inherent_score()
-    controls <- control_score()
+    
+    inherent <-
+      inherent_score()
     
     
-    score <- inherent *
+    controls <-
+      control_score()
+    
+    
+    score <-
+      
+      inherent *
+      
       (
         1 -
           (
@@ -2903,10 +4223,11 @@ server <- function(input, output, session) {
       )
     
     
-    score <- max(
-      score,
-      0
-    )
+    score <-
+      max(
+        score,
+        0
+      )
     
     
     if (
@@ -2916,10 +4237,12 @@ server <- function(input, output, session) {
       )
     ) {
       
-      score <- max(
-        score,
-        60
-      )
+      score <-
+        max(
+          score,
+          60
+        )
+      
     }
     
     
@@ -2930,22 +4253,26 @@ server <- function(input, output, session) {
       )
     ) {
       
-      score <- max(
-        score,
-        80
-      )
+      score <-
+        max(
+          score,
+          80
+        )
+      
     }
     
     
     score
+    
   })
   
   
   # ==========================================================
-  # OVERALL RATING
+  # RISK LABEL
   # ==========================================================
   
   risk_label <- reactive({
+    
     
     if (
       !assessment_complete()
@@ -2954,6 +4281,7 @@ server <- function(input, output, session) {
       return(
         "INCOMPLETE"
       )
+      
     }
     
     
@@ -2967,6 +4295,7 @@ server <- function(input, output, session) {
       return(
         "DO NOT PROCEED / REVIEW"
       )
+      
     }
     
     
@@ -2980,10 +4309,12 @@ server <- function(input, output, session) {
       return(
         "ESCALATION REQUIRED"
       )
+      
     }
     
     
-    score <- residual_score()
+    score <-
+      residual_score()
     
     
     case_when(
@@ -3002,35 +4333,61 @@ server <- function(input, output, session) {
       
       TRUE ~
         "ESCALATION REQUIRED"
+      
     )
+    
   })
   
   
   # ==========================================================
-  # HELPERS
+  # RESULT HELPERS
   # ==========================================================
   
   risk_description <- function(score) {
     
     case_when(
-      score < 20 ~ "Low",
-      score < 40 ~ "Moderate",
-      score < 60 ~ "High",
-      score < 75 ~ "Very high",
-      TRUE ~ "Critical"
+      
+      score < 20 ~
+        "Low",
+      
+      score < 40 ~
+        "Moderate",
+      
+      score < 60 ~
+        "High",
+      
+      score < 75 ~
+        "Very high",
+      
+      TRUE ~
+        "Critical"
+      
     )
+    
   }
   
   
   control_description <- function(score) {
     
     case_when(
-      score >= 80 ~ "Strong",
-      score >= 60 ~ "Good",
-      score >= 40 ~ "Moderate",
-      score >= 20 ~ "Weak",
-      TRUE ~ "Very weak"
+      
+      score >= 80 ~
+        "Strong",
+      
+      score >= 60 ~
+        "Good",
+      
+      score >= 40 ~
+        "Moderate",
+      
+      score >= 20 ~
+        "Weak",
+      
+      TRUE ~
+        "Very weak"
+      
     )
+    
   }
   
   
@@ -3040,31 +4397,50 @@ server <- function(input, output, session) {
   
   output$project_heading <- renderUI({
     
-    if (
-      is.null(input$project_name) ||
-      input$project_name == ""
-    ) {
-      
-      return(NULL)
-    }
-    
-    
     tagList(
       
-      h4(
-        paste(
-          "Use case:",
-          input$project_name
+      if (
+        !is.null(
+          input$use_case_id
+        ) &&
+        input$use_case_id !=
+        ""
+      ) {
+        
+        div(
+          
+          class = "alert alert-light",
+          
+          strong(
+            "Use Case ID: "
+          ),
+          
+          input$use_case_id
+          
         )
-      ),
+        
+      },
       
-      p(
-        paste(
-          "Lifecycle:",
-          input$lifecycle
+      
+      if (
+        !is.null(
+          input$project_name
+        ) &&
+        input$project_name !=
+        ""
+      ) {
+        
+        h4(
+          paste(
+            "Use case:",
+            input$project_name
+          )
         )
-      )
+        
+      }
+      
     )
+    
   })
   
   
@@ -3075,38 +4451,56 @@ server <- function(input, output, session) {
   output$inherent_label <- renderText({
     
     if (
-      completed_questions() == 0
+      completed_questions() ==
+      0
     ) {
-      return("Not assessed")
+      
+      return(
+        "Not assessed"
+      )
+      
     }
+    
     
     risk_description(
       inherent_score()
     )
+    
   })
   
   
   output$control_label <- renderText({
     
     if (
-      completed_questions() == 0
+      completed_questions() ==
+      0
     ) {
-      return("Not assessed")
+      
+      return(
+        "Not assessed"
+      )
+      
     }
+    
     
     control_description(
       control_score()
     )
+    
   })
   
   
   output$inherent_score_text <- renderText({
     
     if (
-      completed_questions() == 0
+      completed_questions() ==
+      0
     ) {
+      
       return("-")
+      
     }
+    
     
     paste0(
       round(
@@ -3115,16 +4509,21 @@ server <- function(input, output, session) {
       ),
       "%"
     )
+    
   })
   
   
   output$control_score_text <- renderText({
     
     if (
-      completed_questions() == 0
+      completed_questions() ==
+      0
     ) {
+      
       return("-")
+      
     }
+    
     
     paste0(
       round(
@@ -3133,6 +4532,7 @@ server <- function(input, output, session) {
       ),
       "%"
     )
+    
   })
   
   
@@ -3143,13 +4543,16 @@ server <- function(input, output, session) {
     ) {
       
       return(
+        
         paste0(
           completed_questions(),
           "/",
           TOTAL_ASSESSMENT_QUESTIONS,
           " completed"
         )
+        
       )
+      
     }
     
     
@@ -3160,49 +4563,67 @@ server <- function(input, output, session) {
       ),
       "%"
     )
+    
   })
   
   
   # ==========================================================
-  # BADGE
+  # RISK BADGE
   # ==========================================================
   
   output$risk_badge <- renderUI({
     
-    label <- risk_label()
+    
+    label <-
+      risk_label()
     
     
     badge_class <- case_when(
       
-      label == "INCOMPLETE" ~ "secondary",
+      label ==
+        "INCOMPLETE" ~
+        "secondary",
       
-      label == "LOW" ~ "success",
+      label ==
+        "LOW" ~
+        "success",
       
-      label == "MODERATE" ~ "warning",
+      label ==
+        "MODERATE" ~
+        "warning",
       
-      label == "HIGH" ~ "warning",
+      label ==
+        "HIGH" ~
+        "warning",
       
-      label == "VERY HIGH" ~ "danger",
+      label ==
+        "VERY HIGH" ~
+        "danger",
       
-      TRUE ~ "danger"
+      TRUE ~
+        "danger"
+      
     )
     
     
     span(
       
-      class = paste0(
-        "badge bg-",
-        badge_class
-      ),
+      class =
+        paste0(
+          "badge bg-",
+          badge_class
+        ),
       
       style = "
-        font-size:20px;
-        padding:14px;
-        font-weight:800;
+      font-size:20px;
+      padding:14px;
+      font-weight:800;
       ",
       
       label
+      
     )
+    
   })
   
   
@@ -3211,6 +4632,7 @@ server <- function(input, output, session) {
   # ==========================================================
   
   domain_scores <- reactive({
+    
     
     scored_answers() %>%
       
@@ -3240,7 +4662,9 @@ server <- function(input, output, session) {
             na.rm = TRUE
           ),
         
-        .groups = "drop"
+        .groups =
+          "drop"
+        
       ) %>%
       
       arrange(
@@ -3248,24 +4672,28 @@ server <- function(input, output, session) {
           risk_score
         )
       )
+    
   })
   
   
   # ==========================================================
-  # RISK PROFILE
+  # RISK PLOT
   # ==========================================================
   
   output$risk_plot <- renderPlot({
     
-    dat <- domain_scores()
+    
+    dat <-
+      domain_scores()
     
     
     validate(
       
       need(
         nrow(dat) > 0,
-        "Complete relevant assessment questions to see the risk profile."
+        "Complete some relevant assessment questions to see the risk profile."
       )
+      
     )
     
     
@@ -3274,11 +4702,13 @@ server <- function(input, output, session) {
       dat,
       
       aes(
-        x = reorder(
-          domain,
+        x =
+          reorder(
+            domain,
+            risk_score
+          ),
+        y =
           risk_score
-        ),
-        y = risk_score
       )
       
     ) +
@@ -3290,58 +4720,53 @@ server <- function(input, output, session) {
       geom_text(
         
         aes(
-          label = paste0(
-            round(
-              risk_score
-            ),
-            "%"
-          )
+          label =
+            paste0(
+              round(
+                risk_score
+              ),
+              "%"
+            )
         ),
         
-        hjust = -0.1,
-        fontface = "bold"
+        hjust =
+          -0.1,
+        
+        fontface =
+          "bold"
+        
       ) +
       
       coord_flip() +
       
       scale_y_continuous(
-        limits = c(
-          0,
-          110
-        ),
-        breaks = seq(
-          0,
-          100,
-          20
-        )
+        limits =
+          c(
+            0,
+            110
+          )
       ) +
       
       labs(
-        x = NULL,
-        y = "Risk / control concern (%)",
-        title = "Risk profile by assessment area"
+        x =
+          NULL,
+        y =
+          "Risk / control concern (%)"
       ) +
       
       theme_minimal(
         base_size = 13
-      ) +
-      
-      theme(
-        plot.title = element_text(
-          face = "bold"
-        ),
-        axis.text.y = element_text(
-          face = "bold"
-        )
       )
+    
   })
   
   
   # ==========================================================
-  # FLAGS
+  # FLAGS OUTPUT
   # ==========================================================
   
   output$flag_output <- renderUI({
+    
     
     if (
       !assessment_complete()
@@ -3350,32 +4775,46 @@ server <- function(input, output, session) {
       return(
         
         div(
-          class = "alert alert-secondary",
+          
+          class =
+            "alert alert-secondary",
+          
           paste(
             "Complete all 25 questions before the final",
             "escalation assessment is determined."
           )
+          
         )
+        
       )
+      
     }
     
     
-    flag_data <- flags()
+    flag_data <-
+      flags()
     
     
     if (
-      nrow(flag_data) == 0
+      nrow(flag_data) ==
+      0
     ) {
       
       return(
         
         div(
-          class = "alert alert-success",
+          
+          class =
+            "alert alert-success",
+          
           strong(
             "No automatic escalation or stop conditions were identified."
           )
+          
         )
+        
       )
+      
     }
     
     
@@ -3384,27 +4823,34 @@ server <- function(input, output, session) {
       lapply(
         
         seq_len(
-          nrow(flag_data)
+          nrow(
+            flag_data
+          )
         ),
         
         function(i) {
           
-          alert_class <- if (
-            flag_data$severity[i] ==
-            "STOP"
-          ) {
+          
+          alert_class <-
             
-            "alert alert-danger"
-            
-          } else {
-            
-            "alert alert-warning"
-          }
+            if (
+              flag_data$severity[i] ==
+              "STOP"
+            ) {
+              
+              "alert alert-danger"
+              
+            } else {
+              
+              "alert alert-warning"
+              
+            }
           
           
           div(
             
-            class = alert_class,
+            class =
+              alert_class,
             
             strong(
               paste0(
@@ -3414,10 +4860,15 @@ server <- function(input, output, session) {
             ),
             
             flag_data$issue[i]
+            
           )
+          
         }
+        
       )
+      
     )
+    
   })
   
   
@@ -3427,13 +4878,17 @@ server <- function(input, output, session) {
   
   output$key_risks <- renderUI({
     
-    dat <- scored_answers() %>%
+    
+    dat <-
+      
+      scored_answers() %>%
       
       filter(
         !is.na(
           adjusted_score
         ),
-        adjusted_score >= 3
+        adjusted_score >=
+          3
       ) %>%
       
       arrange(
@@ -3451,16 +4906,20 @@ server <- function(input, output, session) {
     
     
     if (
-      nrow(dat) == 0
+      nrow(dat) ==
+      0
     ) {
       
       return(
         
         div(
-          class = "alert alert-success",
+          class =
+            "alert alert-success",
           "No high-concern responses have currently been identified."
         )
+        
       )
+      
     }
     
     
@@ -3476,7 +4935,8 @@ server <- function(input, output, session) {
           
           div(
             
-            class = "alert alert-warning",
+            class =
+              "alert alert-warning",
             
             h5(
               dat$domain[i]
@@ -3487,50 +4947,113 @@ server <- function(input, output, session) {
             ),
             
             p(
-              strong("Your response: "),
+              strong(
+                "Your response: "
+              ),
               dat$response_text[i]
             ),
             
             if (
-              dat$notes[i] != ""
+              dat$notes[i] !=
+              ""
             ) {
               
               p(
-                strong("Your notes: "),
+                strong(
+                  "Your notes: "
+                ),
                 dat$notes[i]
               )
               
             } else {
               
               NULL
+              
             },
             
             p(
-              strong("Recommended action: "),
+              strong(
+                "Recommended action: "
+              ),
               dat$recommended_action[i]
             )
+            
           )
+          
         }
+        
       )
+      
     )
+    
   })
   
   
-# ============================================================
-# RECOMMENDATIONS
-# ============================================================
-
-output$recommendations <- renderUI({
-
-  dat <- recommendation_data()
-
-  tags$ul(
-    lapply(
-      dat$recommended_action,
-      tags$li
+  # ==========================================================
+  # RECOMMENDATIONS
+  # ==========================================================
+  
+  output$recommendations <- renderUI({
+    
+    
+    dat <-
+      
+      scored_answers() %>%
+      
+      filter(
+        !is.na(
+          adjusted_score
+        ),
+        adjusted_score >=
+          2
+      ) %>%
+      
+      arrange(
+        desc(
+          adjusted_score
+        ),
+        desc(
+          weight
+        )
+      ) %>%
+      
+      distinct(
+        recommended_action
+      )
+    
+    
+    if (
+      nrow(dat) ==
+      0
+    ) {
+      
+      return(
+        
+        div(
+          class =
+            "alert alert-success",
+          paste(
+            "No major additional assurance activities have currently",
+            "been identified. Continue to apply proportionate analytical QA."
+          )
+        )
+        
+      )
+      
+    }
+    
+    
+    tags$ul(
+      
+      lapply(
+        dat$recommended_action,
+        tags$li
+      )
+      
     )
-  )
-})
+    
+  })
+  
   
   # ==========================================================
   # ADDITIONAL CONSIDERATIONS
@@ -3542,28 +5065,33 @@ output$recommendations <- renderUI({
       is.null(
         input$additional_considerations
       ) ||
-      identical(
-        input$additional_considerations,
-        ""
-      )
+      trimws(
+        input$additional_considerations
+      ) ==
+      ""
     ) {
       
       return(
         
         p(
-          class = "text-muted",
-          "No additional considerations were recorded."
+          class =
+            "text-muted",
+          "No additional considerations recorded."
         )
+        
       )
+      
     }
     
     
     div(
-      class = "alert alert-light",
+      class =
+        "alert alert-light",
       p(
         input$additional_considerations
       )
     )
+    
   })
   
   
@@ -3573,60 +5101,89 @@ output$recommendations <- renderUI({
   
   output$decision_summary <- renderUI({
     
-    label <- risk_label()
+    
+    label <-
+      risk_label()
     
     
     if (
-      label == "INCOMPLETE"
+      label ==
+      "INCOMPLETE"
     ) {
       
       return(
         
-        tagList(
-          h4("Assessment incomplete"),
-          p(
-            "Complete all 25 questions before relying on the overall rating."
-          )
+        div(
+          
+          class =
+            "alert alert-secondary",
+          
+          strong(
+            "Assessment incomplete. "
+          ),
+          
+          "Complete all 25 questions before relying on the overall rating."
+          
         )
+        
       )
+      
     }
     
     
     if (
-      label == "LOW"
+      label ==
+      "LOW"
     ) {
       
       return(
         
-        tagList(
-          h4("Proceed with standard assurance"),
-          p(
-            paste(
-              "The use case currently appears suitable to proceed",
-              "with proportionate analytical QA and normal controls."
-            )
+        div(
+          
+          class =
+            "alert alert-success",
+          
+          strong(
+            "Proceed with standard assurance. "
+          ),
+          
+          paste(
+            "The use case currently appears suitable to proceed with",
+            "proportionate analytical QA and normal departmental controls."
           )
+          
         )
+        
       )
+      
     }
     
     
     if (
-      label == "MODERATE"
+      label ==
+      "MODERATE"
     ) {
       
       return(
         
-        tagList(
-          h4("Proceed with additional controls"),
-          p(
-            paste(
-              "Address the identified areas requiring attention",
-              "and document the assurance undertaken."
-            )
+        div(
+          
+          class =
+            "alert alert-warning",
+          
+          strong(
+            "Proceed with additional controls. "
+          ),
+          
+          paste(
+            "Address the identified areas requiring attention",
+            "and document the assurance undertaken."
           )
+          
         )
+        
       )
+      
     }
     
     
@@ -3640,47 +5197,71 @@ output$recommendations <- renderUI({
       
       return(
         
-        tagList(
-          h4("Enhanced assurance required"),
-          p(
-            paste(
-              "Additional testing, review and appropriate specialist",
-              "assurance should be completed before operational use."
-            )
+        div(
+          
+          class =
+            "alert alert-danger",
+          
+          strong(
+            "Enhanced assurance required. "
+          ),
+          
+          paste(
+            "Additional testing, review and appropriate specialist",
+            "assurance should be completed before operational use."
           )
+          
         )
+        
       )
+      
     }
     
     
     if (
-      label == "ESCALATION REQUIRED"
+      label ==
+      "ESCALATION REQUIRED"
     ) {
       
       return(
         
-        tagList(
-          h4("Escalation required"),
-          p(
-            paste(
-              "One or more material concerns should be reviewed",
-              "with the appropriate assurance or specialist team."
-            )
+        div(
+          
+          class =
+            "alert alert-danger",
+          
+          strong(
+            "Escalation required. "
+          ),
+          
+          paste(
+            "One or more material concerns should be reviewed",
+            "with the appropriate assurance or specialist team."
           )
+          
         )
+        
       )
+      
     }
     
     
-    tagList(
-      h4("Do not proceed without review"),
-      p(
-        paste(
-          "AI RiskCheck has identified a stop condition.",
-          "Resolve or formally review the issue before proceeding."
-        )
+    div(
+      
+      class =
+        "alert alert-danger",
+      
+      strong(
+        "Do not proceed without review. "
+      ),
+      
+      paste(
+        "AI RiskCheck has identified a stop condition.",
+        "Resolve or formally review the issue before proceeding."
       )
+      
     )
+    
   })
   
   
@@ -3690,13 +5271,10 @@ output$recommendations <- renderUI({
   
   output$risk_table <- renderDT({
     
-    dat <- scored_answers() %>%
+    
+    dat <-
       
-      filter(
-        !is.na(
-          raw_response
-        )
-      ) %>%
+      scored_answers() %>%
       
       select(
         
@@ -3720,6 +5298,7 @@ output$recommendations <- renderUI({
         
         `Recommended action` =
           recommended_action
+        
       )
     
     
@@ -3727,14 +5306,21 @@ output$recommendations <- renderUI({
       
       dat,
       
-      rownames = FALSE,
+      rownames =
+        FALSE,
       
-      options = list(
-        pageLength = 10,
-        scrollX = TRUE,
-        autoWidth = TRUE
-      )
+      options =
+        list(
+          pageLength =
+            10,
+          scrollX =
+            TRUE,
+          autoWidth =
+            TRUE
+        )
+      
     )
+    
   })
   
   
@@ -3744,27 +5330,49 @@ output$recommendations <- renderUI({
   
   output$system_profile <- renderUI({
     
+    
     get_value <- function(x) {
       
       if (
         is.null(x) ||
-        length(x) == 0 ||
-        identical(x, "")
+        length(x) ==
+        0 ||
+        identical(
+          x,
+          ""
+        )
       ) {
         
         return(
           "Not provided"
         )
+        
       }
+      
       
       paste(
         x,
         collapse = "; "
       )
+      
     }
     
     
     profile_rows <- list(
+      
+      c(
+        "Use Case ID",
+        get_value(
+          input$use_case_id
+        )
+      ),
+      
+      c(
+        "Assessment owner / team",
+        get_value(
+          input$assessment_owner
+        )
+      ),
       
       c(
         "Project / use case",
@@ -3849,12 +5457,14 @@ output$recommendations <- renderUI({
           input$access_method
         )
       )
+      
     )
     
     
     tags$table(
       
-      class = "table table-striped",
+      class =
+        "table table-striped",
       
       tags$tbody(
         
@@ -3865,13 +5475,22 @@ output$recommendations <- renderUI({
           function(row) {
             
             tags$tr(
-              tags$th(row[1]),
-              tags$td(row[2])
+              tags$th(
+                row[1]
+              ),
+              tags$td(
+                row[2]
+              )
             )
+            
           }
+          
         )
+        
       )
+      
     )
+    
   })
   
   
@@ -3893,12 +5512,17 @@ output$recommendations <- renderUI({
         
         function(i) {
           
-          ref <- references[i, ]
+          
+          ref <-
+            references[
+              i,
+            ]
           
           
           card(
             
-            class = "mb-3",
+            class =
+              "mb-3",
             
             card_header(
               h4(
@@ -3909,13 +5533,16 @@ output$recommendations <- renderUI({
             card_body(
               
               p(
+                
                 strong(
                   ref$organisation
                 ),
+                
                 paste0(
                   " — ",
                   ref$date
                 )
+                
               ),
               
               p(
@@ -3923,19 +5550,275 @@ output$recommendations <- renderUI({
               ),
               
               tags$a(
-                href = ref$url,
-                target = "_blank",
-                class = "btn btn-outline-primary",
+                
+                href =
+                  ref$url,
+                
+                target =
+                  "_blank",
+                
+                class =
+                  "btn btn-outline-primary",
+                
                 "Open reference"
+                
               )
+              
             )
+            
           )
+          
         }
+        
       )
+      
     )
+    
   })
   
+  
+  # ==========================================================
+  # FEEDBACK SUBMISSION
+  # ==========================================================
+  
+  observeEvent(
+    
+    input$submit_feedback,
+    
+    {
+      
+      
+      comments <-
+        
+        if (
+          is.null(
+            input$feedback_comments
+          )
+        ) {
+          ""
+        } else {
+          trimws(
+            input$feedback_comments
+          )
+        }
+      
+      
+      missing_feedback <-
+        
+        if (
+          is.null(
+            input$feedback_missing
+          )
+        ) {
+          ""
+        } else {
+          trimws(
+            input$feedback_missing
+          )
+        }
+      
+      
+      # Require at least comments, missing-topic feedback,
+      # or a usefulness rating.
+      
+      rating_present <-
+        
+        !is.null(
+          input$feedback_rating
+        ) &&
+        
+        length(
+          input$feedback_rating
+        ) >
+        0
+      
+      
+      if (
+        comments ==
+        "" &&
+        missing_feedback ==
+        "" &&
+        !rating_present
+      ) {
+        
+        feedback_message_type(
+          "warning"
+        )
+        
+        feedback_message(
+          paste(
+            "Please provide a usefulness rating or enter",
+            "some feedback before submitting."
+          )
+        )
+        
+        return()
+        
+      }
+      
+      
+      feedback_row <- tibble(
+        
+        submitted_at =
+          as.character(
+            Sys.time()
+          ),
+        
+        app_version =
+          APP_VERSION,
+        
+        classification =
+          CLASSIFICATION_LABEL,
+        
+        name_or_team =
+          if (
+            is.null(
+              input$feedback_name
+            )
+          ) {
+            ""
+          } else {
+            input$feedback_name
+          },
+        
+        use_case_id =
+          if (
+            is.null(
+              input$feedback_case_id
+            )
+          ) {
+            ""
+          } else {
+            input$feedback_case_id
+          },
+        
+        feedback_type =
+          input$feedback_type,
+        
+        usefulness_rating =
+          if (
+            rating_present
+          ) {
+            input$feedback_rating
+          } else {
+            NA_character_
+          },
+        
+        comments =
+          comments,
+        
+        missing_risks_or_guidance =
+          missing_feedback
+        
+      )
+      
+      
+      # ----------------------------------------
+      # SAVE TO CSV
+      # ----------------------------------------
+      
+      if (
+        file.exists(
+          FEEDBACK_FILE
+        )
+      ) {
+        
+        existing_feedback <-
+          read.csv(
+            FEEDBACK_FILE,
+            stringsAsFactors = FALSE
+          )
+        
+        
+        updated_feedback <-
+          bind_rows(
+            existing_feedback,
+            feedback_row
+          )
+        
+      } else {
+        
+        updated_feedback <-
+          feedback_row
+        
+      }
+      
+      
+      write.csv(
+        updated_feedback,
+        FEEDBACK_FILE,
+        row.names = FALSE
+      )
+      
+      
+      # ----------------------------------------
+      # SUCCESS
+      # ----------------------------------------
+      
+      feedback_message_type(
+        "success"
+      )
+      
+      
+      feedback_message(
+        "Thank you. Your feedback has been submitted successfully."
+      )
+      
+      
+      # ----------------------------------------
+      # RESET FORM
+      # ----------------------------------------
+      
+      updateTextInput(
+        session,
+        "feedback_name",
+        value = ""
+      )
+      
+      
+      updateTextInput(
+        session,
+        "feedback_case_id",
+        value = ""
+      )
+      
+      
+      updateSelectInput(
+        session,
+        "feedback_type",
+        selected =
+          "Overall experience"
+      )
+      
+      
+      updateRadioButtons(
+        session,
+        "feedback_rating",
+        selected =
+          character(0)
+      )
+      
+      
+      updateTextAreaInput(
+        session,
+        "feedback_comments",
+        value = ""
+      )
+      
+      
+      updateTextAreaInput(
+        session,
+        "feedback_missing",
+        value = ""
+      )
+      
+    }
+    
+  )
+  
 
+
+  
   # ============================================================
 # REPORT HELPERS
 # ============================================================
@@ -4086,55 +5969,68 @@ decision_summary_text <- reactive({
     "Resolve or formally review the issue before proceeding."
   )
 })
+
   
   # ==========================================================
-  # DOWNLOAD
+  # DOWNLOAD ASSESSMENT
   # ==========================================================
-  
-
-
   
   output$download_assessment <- downloadHandler(
     
+    
     filename = function() {
       
-      project_name <- input$project_name
       
-      
-      if (
-        is.null(project_name) ||
-        project_name == ""
-      ) {
+      safe_id <-
         
-        project_name <-
+        if (
+          is.null(
+            input$use_case_id
+          ) ||
+          input$use_case_id ==
+          ""
+        ) {
+          
           "AI_RiskCheck"
-      }
-      
-      
-      safe_name <- gsub(
-        "[^A-Za-z0-9]+",
-        "_",
-        project_name
-      )
+          
+        } else {
+          
+          gsub(
+            "[^A-Za-z0-9_-]",
+            "_",
+            input$use_case_id
+          )
+          
+        }
       
       
       paste0(
-        safe_name,
-        "_AI_RiskCheck_Assessment_",
+        safe_id,
+        "_Assessment_",
         Sys.Date(),
         ".csv"
       )
+      
     },
     
     
     content = function(file) {
       
-      results <- scored_answers() %>%
+      
+      results <-
+        
+        scored_answers() %>%
         
         mutate(
           
           classification =
             CLASSIFICATION_LABEL,
+          
+          use_case_id =
+            input$use_case_id,
+          
+          assessment_owner =
+            input$assessment_owner,
           
           project_name =
             input$project_name,
@@ -4177,7 +6073,7 @@ decision_summary_text <- reactive({
               Sys.Date()
             ),
           
-          application_version =
+          app_version =
             APP_VERSION,
           
           assessment_complete =
@@ -4209,6 +6105,7 @@ decision_summary_text <- reactive({
               flags()$issue,
               collapse = " | "
             )
+          
         )
       
       
@@ -4217,9 +6114,12 @@ decision_summary_text <- reactive({
         file,
         row.names = FALSE
       )
+      
     }
+    
   )
 
+  
 # ============================================================
 # HTML REPORT DOWNLOAD
 # ============================================================
@@ -4694,11 +6594,13 @@ output$download_report <- downloadHandler(
 )
 
 
+
+  
 }
 
 
 # ============================================================
-# 9. RUN APP
+# 10. RUN APP
 # ============================================================
 
 shinyApp(
